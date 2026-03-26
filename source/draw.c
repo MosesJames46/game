@@ -1,11 +1,26 @@
+#include <stdbool.h>
+#include <stdio.h>
+#include <SDL2/SDL.h>
 #include "../headers/game_utility.h"
 #include "../headers/game_math.h"
 #include "../headers/draw.h"
-#include <stdbool.h>
-#include <stdio.h>
+
+/*
+    Opening a window: https://stackoverflow.com/questions/34424816/sdl-window-does-not-show
+*/
 
 
-void draw_line(vec2 u, vec2 v){
+
+void draw_line(vec2 u, vec2 v, game_window window, SDL_Renderer* renderer){
+    /*
+        Because we want to perform the drawing operation left to right, we swap our points if and only if our first point's
+        x position is larger than our second point's x position.
+    */
+    if (u.x > v.x){
+        swapf(&u.x, &v.x);
+        swapf(&u.y, &v.y);
+    }
+
     bool steep = (v.x - u.x) < (v.y - u.y);
     /*
         Our draw function iterates over the range of x values. Because of this, if the slope is steep, that means that
@@ -19,14 +34,7 @@ void draw_line(vec2 u, vec2 v){
         swapf(&u.x, &u.y);
         swapf(&v.x, &v.y);
     }
-    /*
-    `   Because we want to perform the drawing operation left to right, we swap our points if and only if our first point's
-        x position is larger than our second point's x position.
-    */
-    if (u.x > v.x){
-        swapf(&u.x, &v.x);
-        swapf(&u.y, &v.y);
-    }
+    
 
     float length_of_x = v.x - u.x;
     float length_of_y = v.y - u.y;
@@ -48,12 +56,22 @@ void draw_line(vec2 u, vec2 v){
         float y = gm_roundf(u.y + length_of_y * t);
         if (steep){
             //Draw points
-            printf(VECTOR_OUTPUT"\n", y, x);
+            vec2 sc = screen_coordinate((vec2){y, x}, window);
+            SDL_RenderDrawPoint(renderer, sc.x, sc.y);
         }else{
             //Draw points
-            printf(VECTOR_OUTPUT"\n", x, y);
+            vec2 sc = screen_coordinate((vec2){x, y}, window);
+            SDL_RenderDrawPoint(renderer, sc.x, sc.y);
         }
     }
 
     //printf(VECTOR_OUTPUT " " VECTOR_OUTPUT "\n", u.x, u.y, v.x, v.y);
+}
+
+vec2 screen_coordinate(vec2 u, game_window window){
+    //(width / 2) + point
+    int screen_position_x = u.x + (window.width / 2.f);
+    int screen_position_y = -u.y + (window.height / 2.f);
+    return (vec2){screen_position_x, screen_position_y};
+
 }

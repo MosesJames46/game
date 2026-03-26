@@ -1,5 +1,5 @@
-objects = main.o draw.o game_utility.o game_math.o
-h_files = headers/draw.h headers/game_utility.h headers/vector2.h 
+objects = main.o draw.o game_utility.o game_math.o game_window.o
+h_files = headers/draw.h headers/game_utility.h headers/vector2.h
 includes = `pkg-config --cflags --libs sdl2`
 libs = -L usr/local/Cellar/sdl2/2.32.10/libs
 CC = gcc -c
@@ -22,5 +22,8 @@ game_utility.o : source/game_utility.c headers/game_utility.h
 
 game_math.o : source/game_math.c headers/game_math.h 
 			$(CC) source/game_math.c
+
+game_window.o : source/game_window.c headers/game_window.h
+				$(CC) source/game_window.c
 clean: 
 	rm main $(objects)

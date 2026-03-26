@@ -1,40 +1,26 @@
 #include <stdio.h>
-#include "headers/draw.h"
-#include "headers/game_utility.h"
-#include "headers/vector2.h"
 #include <SDL2/SDL.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include "headers/draw.h"
+#include "headers/game_utility.h"
+#include "headers/vector2.h"
+
 
 int main(int argc, char* argv []){
+    game_window window;
+    bool initialized = init_game_window(&window);
 
-     if(SDL_Init(SDL_INIT_VIDEO) < 0)
-    {
-        printf("Failed to initialize the SDL2 library\n");
-        return -1;
-    }
-    SDL_Window *window = SDL_CreateWindow("SDL2 Window",
-                                          SDL_WINDOWPOS_CENTERED,
-                                          SDL_WINDOWPOS_CENTERED,
-                                          680, 480,
-                                          0);
+    vec2 v = {250,250};
+    vec2 u = {50, 8};
+    //draw_line(u, v, window);
 
-    if(!window)
-    {
-        printf("Failed to create window\n");
-        return -1;
-    }
-
-    SDL_Surface *window_surface = SDL_GetWindowSurface(window);
-
-    if(!window_surface)
-    {
-        printf("Failed to get the surface from the window\n");
-        return -1;
-    }
     SDL_Event e;
-    bool quit = false;
+    SDL_Renderer* Renderer;
+    SDL_CreateWindowAndRenderer(window.width, window.height, 0, &window.game_window, &Renderer);
+    bool quit = (initialized) ? false : true;
     while (!quit){
+        SDL_RenderClear(Renderer);
         while (SDL_PollEvent(&e)){
             if (e.type == SDL_QUIT){
                 quit = true;
@@ -46,10 +32,13 @@ int main(int argc, char* argv []){
                 quit = true;
             }
         }
+        SDL_SetRenderDrawColor(Renderer, 0, 0, 0, 0);
+        SDL_RenderClear(Renderer);
+        SDL_SetRenderDrawColor(Renderer, 255, 0, 0, 255);
+        draw_line(u, v, window, Renderer);
+        SDL_RenderPresent(Renderer);
     }
 
-    vec2 v = {0,0};
-    vec2 u = {5, 8};
-    draw_line(u, v);
+    
     return 0;
 }
