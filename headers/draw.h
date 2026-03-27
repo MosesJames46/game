@@ -12,7 +12,7 @@ typedef struct Draw_Data{
     Game_Data window;
 } Draw_Data;
 
-void draw_line(vec2 u, vec2 v, Game_Data game_data);
-vec2 screen_coordinate(vec2 u, Game_Data game_data);
-void draw_point(vec2 u, Game_Data game_data);
+void draw_line(vec2 u, vec2 v);
+vec2 screen_coordinate(vec2 u);
+void draw_point(vec2 u);
 #endif

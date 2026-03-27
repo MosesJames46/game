@@ -7,9 +7,9 @@
 #include "headers/vector2.h"
 
 
+
 int main(int argc, char* argv []){
-    Game_Data game_data;
-    bool initialized = init_game(&game_data);
+    bool initialized = init_game();
 
     
     vec2 u = {0, 0};
@@ -34,9 +34,9 @@ int main(int argc, char* argv []){
                 quit = true;
             }
         }
-        draw_line(u, v, game_data);
-        draw_line(v, w, game_data);
-        draw_line(w, u, game_data);
+        draw_line(u, v);
+        draw_line(v, w);
+        draw_line(w, u);
         SDL_RenderPresent(game_data.renderer);
     }
 

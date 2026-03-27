@@ -6,6 +6,9 @@
 #define WINDOW_WIDTH 800;
 #define WINDOW_HEIGHT 600;
 
+//Using extern: https://www.linkedin.com/pulse/back-basics-how-properlly-extern-struct-cc-gurajapu-raja-sumant
+//Using extern: https://stackoverflow.com/questions/3041797/how-to-use-a-defined-struct-from-another-source-file
+
 typedef struct Game_Data{
     int width;
     int height;
@@ -13,7 +16,9 @@ typedef struct Game_Data{
     SDL_Renderer* renderer;
 }Game_Data;
 
-bool init_game(Game_Data* game_data);
+extern struct Game_Data game_data;
+
+bool init_game();
 
 
 #endif
