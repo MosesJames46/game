@@ -8,19 +8,21 @@
 
 
 int main(int argc, char* argv []){
-    game_window window;
-    bool initialized = init_game_window(&window);
+    Game_Data game_data;
+    bool initialized = init_game(&game_data);
 
-    vec2 v = {250,250};
-    vec2 u = {50, 8};
+    
+    vec2 u = {0, 0};
+    vec2 v = {100, 0};
+    vec2 w = {100, 100};
     //draw_line(u, v, window);
 
     SDL_Event e;
-    SDL_Renderer* Renderer;
-    SDL_CreateWindowAndRenderer(window.width, window.height, 0, &window.game_window, &Renderer);
+    
     bool quit = (initialized) ? false : true;
     while (!quit){
-        SDL_RenderClear(Renderer);
+        SDL_SetRenderDrawColor(game_data.renderer, 0, 0, 0, 255);
+        SDL_RenderClear(game_data.renderer);
         while (SDL_PollEvent(&e)){
             if (e.type == SDL_QUIT){
                 quit = true;
@@ -32,11 +34,10 @@ int main(int argc, char* argv []){
                 quit = true;
             }
         }
-        SDL_SetRenderDrawColor(Renderer, 0, 0, 0, 0);
-        SDL_RenderClear(Renderer);
-        SDL_SetRenderDrawColor(Renderer, 255, 0, 0, 255);
-        draw_line(u, v, window, Renderer);
-        SDL_RenderPresent(Renderer);
+        draw_line(u, v, game_data);
+        draw_line(v, w, game_data);
+        draw_line(w, u, game_data);
+        SDL_RenderPresent(game_data.renderer);
     }
 
     

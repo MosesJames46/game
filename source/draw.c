@@ -6,12 +6,12 @@
 #include "../headers/draw.h"
 
 /*
-    Opening a window: https://stackoverflow.com/questions/34424816/sdl-window-does-not-show
+    
 */
 
 
 
-void draw_line(vec2 u, vec2 v, game_window window, SDL_Renderer* renderer){
+void draw_line(vec2 u, vec2 v, Game_Data game_data){
     /*
         Because we want to perform the drawing operation left to right, we swap our points if and only if our first point's
         x position is larger than our second point's x position.
@@ -56,22 +56,28 @@ void draw_line(vec2 u, vec2 v, game_window window, SDL_Renderer* renderer){
         float y = gm_roundf(u.y + length_of_y * t);
         if (steep){
             //Draw points
-            vec2 sc = screen_coordinate((vec2){y, x}, window);
-            SDL_RenderDrawPoint(renderer, sc.x, sc.y);
+            draw_point((vec2){y, x}, game_data);
         }else{
             //Draw points
-            vec2 sc = screen_coordinate((vec2){x, y}, window);
-            SDL_RenderDrawPoint(renderer, sc.x, sc.y);
+            draw_point((vec2){x, y}, game_data);
         }
     }
 
     //printf(VECTOR_OUTPUT " " VECTOR_OUTPUT "\n", u.x, u.y, v.x, v.y);
 }
 
-vec2 screen_coordinate(vec2 u, game_window window){
+vec2 screen_coordinate(vec2 u, Game_Data game_data){
     //(width / 2) + point
-    int screen_position_x = u.x + (window.width / 2.f);
-    int screen_position_y = -u.y + (window.height / 2.f);
+    int screen_position_x = u.x + (game_data.width / 2.f);
+    int screen_position_y = -u.y + (game_data.height / 2.f);
     return (vec2){screen_position_x, screen_position_y};
+}
 
+void draw_point(vec2 u, Game_Data game_data){
+    //Set to screen coordinates.
+    vec2 sc = screen_coordinate(u, game_data);
+    //set point color. Call SDL_SetRenderDrawColor.
+    SDL_SetRenderDrawColor(game_data.renderer, 255, 0, 0, 255);
+    //draw point on screen. Call SDL_RenderDrawPoint.
+    SDL_RenderDrawPoint(game_data.renderer, sc.x, sc.y);
 }

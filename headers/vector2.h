@@ -7,4 +7,7 @@ typedef struct vec2{
     float y;
 }vec2;
 
+
+
+
 #endif
