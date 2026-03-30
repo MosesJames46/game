@@ -84,8 +84,10 @@ vec3 screen_coordinate(vec3 point){
         If we want to be at the very top, say NDC 1, 1 - 1, we get 0. 
         If we want to be at the bottom, NDC -1, 1 - 0 becomes 1.
     */
-    float x = ((1 + point.x) / 2) * game_data.width;
-    float y = (1 - (point.y + 1) / 2 ) * game_data.height;
+
+   //Very huge deal to actually round the values being sent into the screen. Fixes any rasterization issues.
+    float x = gm_roundf(((1 + point.x) / 2) * game_data.width);
+    float y = gm_roundf((1 - (point.y + 1) / 2 ) * game_data.height);
     //printf(VECTOR3_OUTPUT"\n", x, y, point.z);
     return (vec3){x, y, point.z};
 }
@@ -175,9 +177,8 @@ void draw_rasterize(Triangle t, float bounding_box[4]){
     int y_min = bounding_box[2];
     int y_max = bounding_box[3];
     float epsilon = .1f;
-    int count = 0;
     for (int x = x_min; x < x_max; x++){
-        for (int y = y_min; y < y_max; y++){
+        for (int y = y_min; y <= y_max; y++){
             vec3 p = triangle_barycentric(t, (vec3){x, y, 1});
             float result = p.x + p.y + p.z;
             //printf("%d, %d\n", x, y);
