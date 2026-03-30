@@ -15,7 +15,7 @@ int main(int argc, char* argv []){
     //draw_line(u, v, window);
     //p1 = mat3x3_rotate((vec3){0, 180, 0}, p1);
     vec3 axis = {0, 0, 0};
-    vec3 p1 = {-50, 0, 1};
+    vec3 p1 = {-250, 0, 1};
     vec3 p2 = {50, 0.f, 1};
     vec3 p3 = {0, 50, 1};
 

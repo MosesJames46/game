@@ -100,13 +100,24 @@ vec3 NDC_coordinate(vec3 point){
     return (vec3){x, y, point.z};
 }
 
+void draw_pointc(vec3 u, vec3 color){
+    //Set to screen coordinates.
+    u = NDC_coordinate(u);
+    u = basic_projection(u);
+    u = screen_coordinate(u);
+    //set point color. Call SDL_SetRenderDrawColor.
+    SDL_SetRenderDrawColor(game_data.renderer, color.x, color.y, color.z, 255);
+    //draw point on screen. Call SDL_RenderDrawPoint.
+    SDL_RenderDrawPoint(game_data.renderer, u.x, u.y);
+}
+
 void draw_point(vec3 u){
     //Set to screen coordinates.
     u = NDC_coordinate(u);
     u = basic_projection(u);
     u = screen_coordinate(u);
     //set point color. Call SDL_SetRenderDrawColor.
-    SDL_SetRenderDrawColor(game_data.renderer, 255, 0, 0, 255);
+    SDL_SetRenderDrawColor(game_data.renderer, 255, 255, 255, 255);
     //draw point on screen. Call SDL_RenderDrawPoint.
     SDL_RenderDrawPoint(game_data.renderer, u.x, u.y);
 }
@@ -130,9 +141,9 @@ void draw_triangle(Triangle t){
     /*
         First obtain the bounding box of the triandle.
     */
-    draw_line(t.u, t.v);
-    draw_line(t.v, t.w);
-    draw_line(t.w, t.u);
+    //draw_line(t.u, t.v);
+    //draw_line(t.v, t.w);
+    //draw_line(t.w, t.u);
     float bounding_box[4];
     draw_bounding_box2D(t, bounding_box);
 
@@ -180,10 +191,12 @@ void draw_rasterize(Triangle t, float bounding_box[4]){
     for (int x = x_min; x < x_max; x++){
         for (int y = y_min; y <= y_max; y++){
             vec3 p = triangle_barycentric(t, (vec3){x, y, 1});
+            vec3 color = {255, 255, 255};
             float result = p.x + p.y + p.z;
+            color.x *= p.x; color.y *= p.y; color.z *= p.z;
             //printf("%d, %d\n", x, y);
             if (p.x >= 0 && p.y >= 0 && p.z >= 0){
-                draw_point((vec3){x, y, 0});
+                draw_pointc((vec3){x, y, 0}, color);
             }
         }
     }
