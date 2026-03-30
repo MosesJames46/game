@@ -111,7 +111,7 @@ Mat3x3 mat3x3_cofactor(Mat3x3 A){
     float Af = A.m[1][1] * A.m[2][2] - A.m[1][2] * A.m[2][1];
 	float B = -(A.m[1][0] * A.m[2][2] - A.m[1][2] * A.m[2][0]);
 	float C = A.m[1][0] * A.m[2][1] - A.m[1][1] * A.m[2][0];
-	float D = -(A.m[0][1] * A.m[2][2] - A.m[0][2] * A.m[2][0]);
+	float D = -(A.m[0][1] * A.m[2][2] - A.m[0][2] * A.m[2][1]);
 	float E = A.m[0][0] * A.m[2][2] - A.m[0][2] * A.m[2][0];
 	float F = -(A.m[0][0] * A.m[2][1] - A.m[0][1] * A.m[2][0]);
 	float G = A.m[0][1] * A.m[1][2] - A.m[1][1] * A.m[0][2];
@@ -122,11 +122,8 @@ Mat3x3 mat3x3_cofactor(Mat3x3 A){
     vec3 b = {D, E, F};
     vec3 c = {G, H, I};
 
-    Mat3x3 r;
+    Mat3x3 r = mat3x3_create_matrix(a , b, c);
 
-    r.m[0][0] = Af; r.m[0][1] = B; r.m[0][2] = C;
-    r.m[1][0] = D; r.m[1][1] = E; r.m[1][2] = F;
-    r.m[2][0] = G; r.m[2][1] = H; r.m[2][2] = I;
     return r;
 }
 
@@ -148,16 +145,13 @@ float mat3x3_determinant(Mat3x3 A){
 }
 
 Mat3x3 mat3x3_inverse(Mat3x3 A){
-    A = mat3x3_cofactor(A);
-    //mat3x3_print_mat3x3(A);
-    mat3x3_transpose(&A);
-    //mat3x3_print_mat3x3(A);
     float determinant = mat3x3_determinant(A);
-    printf("Determinant: %f\n", determinant);
-    determinant = 1 / determinant;
+    //printf("Determinant: %f\n", determinant);
+    A = mat3x3_cofactor(A);
+    mat3x3_transpose(&A);
+    determinant = 1.f / determinant;
     
-    A = mat3x3_scal(A, 1.f/determinant);
-    mat3x3_print_mat3x3(A);
+    A = mat3x3_scal(A, determinant);
     return A;
 }
 
@@ -181,7 +175,7 @@ Mat3x3 mat3x3_create_matrix(vec3 a, vec3 b, vec3 c){
 void mat3x3_print_mat3x3(Mat3x3 A){
     for (int  i = 0; i < 3; i++){
         for (int j = 0; j < 3; j++){
-            printf("%f ", A.m[i][ j]);
+            printf("%f ", A.m[i][j]);
         }
         printf("\n");
     }

@@ -15,9 +15,9 @@ int main(int argc, char* argv []){
     //draw_line(u, v, window);
     //p1 = mat3x3_rotate((vec3){0, 180, 0}, p1);
     vec3 axis = {0, 0, 0};
-    vec3 p1 = {-100, 0, 0};
-    vec3 p2 = {100, 0.f, 0};
-    vec3 p3 = {100, 100, 0};
+    vec3 p1 = {-100, 0, 1};
+    vec3 p2 = {100, -50.f, 1};
+    vec3 p3 = {100, 100, 1};
 
     SDL_Event e;
     const float delta = 1.f/60.f;
@@ -47,15 +47,9 @@ int main(int argc, char* argv []){
             }
         }
 
-        //draw_point(p1);
         draw_triangle((Triangle){p1, p2, p3});
-        //vec3 bp = triangle_barycentric((Triangle){p1, p2, p3}, (vec3){50, 50, 0});
-        //printf("hi\n");
-        //printf("Time: %f\n", dt);
-        //printf(VECTOR3_OUTPUT"\n", bp.x, bp.y, bp.z);
         SDL_RenderPresent(game_data.renderer);
     }
-    printf("Total time: %f\n", dt);
     
     return 0;
 }

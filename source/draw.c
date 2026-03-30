@@ -20,7 +20,7 @@ void draw_line(vec3 u, vec3 v){
     if (u.x > v.x){
         swapf(&u.x, &v.x);
         swapf(&u.y, &v.y);
-        swapf(&u.z, &v.z);
+        //swapf(&u.z, &v.z);
     }
 
     bool steep = (v.x - u.x) < (v.y - u.y);
@@ -41,7 +41,7 @@ void draw_line(vec3 u, vec3 v){
 
     float length_of_x = v.x - u.x;
     float length_of_y = v.y - u.y;
-    float length_of_z = u.z - v.z;
+    //float length_of_z = u.z - v.z;
 
     for (float x = u.x; x < v.x; x++){
         //We obtain the length of each point's corresponding compenent with respect to their axis.
@@ -130,7 +130,7 @@ void draw_triangle(Triangle t){
     */
     draw_line(t.u, t.v);
     draw_line(t.v, t.w);
-    draw_line(t.w, t.v);
+    draw_line(t.w, t.u);
     float bounding_box[4];
     draw_bounding_box2D(t, bounding_box);
 
@@ -174,16 +174,17 @@ void draw_rasterize(Triangle t, float bounding_box[4]){
     int x_max = bounding_box[1];
     int y_min = bounding_box[2];
     int y_max = bounding_box[3];
-    float epsilon = .5f;
+    float epsilon = .1f;
+    int count = 0;
     for (int x = x_min; x < x_max; x++){
         for (int y = y_min; y < y_max; y++){
-            vec3 p = triangle_barycentric(t, (vec3){x, y, 0});
+            vec3 p = triangle_barycentric(t, (vec3){x, y, 1});
             float result = p.x + p.y + p.z;
-            if (result >= 1 - epsilon || result <= 1 + epsilon){
-                //printf(VECTOR3_OUTPUT"\n", p.x, p.y, p.z);
-                draw_point(p);
+            //printf("%d, %d\n", x, y);
+            if (p.x >= 0 && p.y >= 0 && p.z >= 0){
+                draw_point((vec3){x, y, 0});
             }
         }
     }
+    //printf("Count is: %d", count);
 }
-
