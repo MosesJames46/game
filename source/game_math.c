@@ -12,7 +12,7 @@ float gm_roundf(float x){
     sign = (sign >> 31);
 
     if (sign == 0) sign = 1;
-    printf("Sign: %d\n", sign);
+    //printf("Sign: %d\n", sign);
 
     
     //Wanted to make sure temp was positive before rounding. Sign will change if and only if temp is negative.

@@ -1,6 +1,7 @@
 objects = main.o draw.o game_utility.o game_math.o game_data.o Matrix3x3.o triangle.o \
-		vector3.o vector2.o
-h_files = headers/draw.h headers/game_utility.h headers/vector2.h headers/Matrix3x3.h 
+		vector3.o vector2.o model.o game_string.o
+h_files = headers/draw.h headers/game_utility.h headers/vector2.h headers/Matrix3x3.h \
+			headers/model.h headers/game_string.h
 includes = `pkg-config --cflags --libs sdl2`
 libs = -L usr/local/Cellar/sdl2/2.32.10/libs
 CC = gcc -c
@@ -15,7 +16,7 @@ main.o : main.c $(h_files)
 vector3.o : source/vector3.c headers/vector3.h 
 			$(CC) source/vector3.c 
 
-vector2.0 : source/vector2.c headers/vector2.h
+vector2.o : source/vector2.c headers/vector2.h
 			$(CC) source/vector2.c
 
 draw.o : source/draw.c headers/draw.h headers/game_math.h headers/triangle.h
@@ -36,6 +37,12 @@ Matrix3x3.o : source/Matrix3x3.c headers/Matrix3x3.h headers/game_utility.h
 triangle.o : source/triangle.c headers/triangle.h headers/vector3.h headers/Matrix3x3.h \
 			headers/vector2.h
 			$(CC) source/triangle.c
+
+model.o : source/model.c headers/model.h
+		 $(CC) source/model.c
+
+game_string.o : source/game_string.c headers/game_string.h
+				$(CC) source/game_string.c
 
 clean: 
 	rm main $(objects)
