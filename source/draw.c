@@ -110,6 +110,7 @@ void draw_point(vec3 u){
     SDL_RenderDrawPoint(game_data.renderer, u.x, u.y);
 }
 
+
 vec3 world_coordinate(vec3 point){
     point.x *= (game_data.height / 2.f);
     point.y *= (game_data.width / 2.f);
