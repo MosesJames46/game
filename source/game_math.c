@@ -33,3 +33,13 @@ float gm_maxf(float x, float y){
     if (x > y) return x;
     return y;
 }
+
+int gm_mini(int x, int y){
+    if (x < y) return x;
+    return y;
+}
+
+int gm_maxi(int x, int y){
+    if (x > y) return x;
+    return y;
+}

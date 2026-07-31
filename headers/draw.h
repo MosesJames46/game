@@ -27,4 +27,5 @@ vec3 world_coordinate(vec3 point);
 void draw_bounding_box2D(Triangle t, float bound_box[4]);
 void draw_rasterize(Triangle t, float bounding_box[4]);
 void draw_triangle(Triangle t);
+void draw_object(unsigned int* faces, int f_size, float* vertices, int size);
 #endif
