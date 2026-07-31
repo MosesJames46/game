@@ -1,13 +1,14 @@
 objects = main.o draw.o game_utility.o game_math.o game_data.o Matrix3x3.o triangle.o \
-		vector3.o vector2.o
-h_files = headers/draw.h headers/game_utility.h headers/vector2.h headers/Matrix3x3.h 
+		vector3.o vector2.o game_string.o gamevf_vector.o gamevi_vector.o \
+		object.o objectparser.o
+h_files = headers/draw.h headers/game_utility.h headers/vector2.h headers/Matrix3x3.h  headers/
 includes = `pkg-config --cflags --libs sdl2`
 libs = -L usr/local/Cellar/sdl2/2.32.10/libs
 CC = gcc -c
 
 
 main : $(objects)
-		gcc  -ggdb -v -o main $(objects) -I $(includes)
+		gcc  -ggdb -o main $(objects) -I $(includes) 
 
 main.o : main.c $(h_files)
 		$(CC) main.c
@@ -36,6 +37,22 @@ Matrix3x3.o : source/Matrix3x3.c headers/Matrix3x3.h headers/game_utility.h
 triangle.o : source/triangle.c headers/triangle.h headers/vector3.h headers/Matrix3x3.h \
 			headers/vector2.h
 			$(CC) source/triangle.c
+
+game_string.o : source/game_string.c headers/game_string.h
+				$(CC) source/game_string.c
+
+gamevf_vector.o : source/gamevf_vector.c headers/gamevf_vector.h headers/game_string.h
+				$(CC) source/gamevf_vector.c
+
+gamevi_vector.o : source/gamevi_vector.c headers/gamevi_vector.h headers/game_string.h
+				$(CC) source/gamevi_vector.c
+
+object.o : source/object.c headers/object.h
+			$(CC) source/object.c
+
+objectparser.o : source/objectparser.c headers/objectparser.h
+				$(CC) source/objectparser.c
+
 
 clean: 
 	rm main $(objects)

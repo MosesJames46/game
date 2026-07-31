@@ -1,6 +1,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <SDL2/SDL.h>
+#include <math.h>
 #include "../headers/game_utility.h"
 #include "../headers/game_math.h"
 #include "../headers/draw.h"
@@ -11,19 +12,9 @@
 struct Game_Data game_data;
 
 void draw_line(vec3 u, vec3 v){
+    
 
-    /*
-        Because we want to perform the drawing operation left to right, we swap our points if and only if our first point's
-        x position is larger than our second point's x position.
-    */
-
-    if (u.x > v.x){
-        swapf(&u.x, &v.x);
-        swapf(&u.y, &v.y);
-        //swapf(&u.z, &v.z);
-    }
-
-    bool steep = (v.x - u.x) < (v.y - u.y);
+    bool steep = gm_roundf(fabsf(v.x - u.x)) < gm_roundf(fabsf(v.y - u.y));
 
     /*
         Our draw function iterates over the range of x values. Because of this, if the slope is steep, that means that
@@ -37,11 +28,19 @@ void draw_line(vec3 u, vec3 v){
         swapf(&u.x, &u.y);
         swapf(&v.x, &v.y);
     }
+    /*
+        Because we want to perform the drawing operation left to right, we swap our points if and only if our first point's
+        x position is larger than our second point's x position.
+    */
+    if (u.x > v.x){
+        swapf(&u.x, &v.x);
+        swapf(&u.y, &v.y);
+        //swapf(&u.z, &v.z);
+    }
     
 
     float length_of_x = v.x - u.x;
     float length_of_y = v.y - u.y;
-    //float length_of_z = u.z - v.z;
 
     for (float x = u.x; x < v.x; x++){
         //We obtain the length of each point's corresponding compenent with respect to their axis.
@@ -49,8 +48,10 @@ void draw_line(vec3 u, vec3 v){
         //The length of the line on the y-axis is: v.y - u.y
         //t represents the amount currently traversed on the x line. This is basically linear interpolation.
         /*
-            x - u.x will equal v.x - u.x only when x == u.x. But since x < v.x is the termination factor of our for loop,
+            x - u.x will equal v.x - u.x only when x == v.x. But since x < v.x is the condition of our for loop,
             this will never happen.
+
+
         */
         float t = (x - u.x) / length_of_x;
 
@@ -100,15 +101,33 @@ vec3 NDC_coordinate(vec3 point){
     return (vec3){x, y, point.z};
 }
 
+void draw_pointc(vec3 u, vec3 color){
+    //Set to screen coordinates.
+    u = basic_projection(u);
+    u = NDC_coordinate(u);
+    
+    u = screen_coordinate(u);
+    
+    
+    //set point color. Call SDL_SetRenderDrawColor.
+    SDL_SetRenderDrawColor(game_data.renderer, 255, 255, 255, 255);
+    //draw point on screen. Call SDL_RenderDrawPoint.
+    SDL_RenderDrawPoint(game_data.renderer, u.x, u.y);
+
+}
+
 void draw_point(vec3 u){
     //Set to screen coordinates.
     u = NDC_coordinate(u);
     u = basic_projection(u);
     u = screen_coordinate(u);
+   
     //set point color. Call SDL_SetRenderDrawColor.
-    SDL_SetRenderDrawColor(game_data.renderer, 255, 0, 0, 255);
+    SDL_SetRenderDrawColor(game_data.renderer, 255, 255, 255, 255);
     //draw point on screen. Call SDL_RenderDrawPoint.
     SDL_RenderDrawPoint(game_data.renderer, u.x, u.y);
+
+    
 }
 
 vec3 world_coordinate(vec3 point){
@@ -122,7 +141,7 @@ vec3 basic_projection(vec3 u){
         u.x /= u.z;
         u.y /= u.z;
     }
-    //printf(VECTOR3_OUTPUT"\n", u.x, u.y, u.z);
+    
     return u;
 }
 
@@ -130,9 +149,11 @@ void draw_triangle(Triangle t){
     /*
         First obtain the bounding box of the triandle.
     */
-    draw_line(t.u, t.v);
-    draw_line(t.v, t.w);
-    draw_line(t.w, t.u);
+    //Before actually drawing anything, we should first project our points within the space they'll be in.
+    //t.u = basic_projection(t.u);
+    //t.v = basic_projection(t.v);
+    //t.w = basic_projection(t.w);
+
     float bounding_box[4];
     draw_bounding_box2D(t, bounding_box);
 
@@ -141,6 +162,24 @@ void draw_triangle(Triangle t){
         If weight is non-negative draw point.
     */
    draw_rasterize(t, bounding_box);
+}
+
+void draw_object(unsigned int* faces, int f_size, float* vertices, int v_size){
+    float scale = 50;
+
+    for(int i = 0; i < f_size; i += 3){
+        unsigned int f1 = (faces[i] - 1) * 3;
+        unsigned int f2 = (faces[i + 1] - 1) * 3;
+        unsigned int f3 = (faces[i + 2] - 2) * 3;
+
+        vec3 a = (vec3){vertices[f1] * scale, vertices[f1 + 1] * scale, vertices[f1 + 2] * scale};
+        vec3 b = (vec3){vertices[f2] * scale, vertices[f2 + 1] * scale, vertices[f2 + 2] * scale};
+        vec3 c = (vec3){vertices[f3] * scale, vertices[f3 + 1] * scale, vertices[f3 + 2] * scale};
+
+        Triangle t = (Triangle){a, b, c};
+
+        draw_triangle(t);
+    }
 }
 
 void draw_bounding_box2D(Triangle t, float bound_box[4]){
@@ -172,20 +211,22 @@ void draw_bounding_box2D(Triangle t, float bound_box[4]){
 }
 
 void draw_rasterize(Triangle t, float bounding_box[4]){
-    int x_min = bounding_box[0];
-    int x_max = bounding_box[1];
-    int y_min = bounding_box[2];
-    int y_max = bounding_box[3];
-    float epsilon = .1f;
-    for (int x = x_min; x < x_max; x++){
-        for (int y = y_min; y <= y_max; y++){
-            vec3 p = triangle_barycentric(t, (vec3){x, y, 1});
-            float result = p.x + p.y + p.z;
-            //printf("%d, %d\n", x, y);
-            if (p.x >= 0 && p.y >= 0 && p.z >= 0){
-                draw_point((vec3){x, y, 0});
-            }
-        }
-    }
-    //printf("Count is: %d", count);
+    draw_line(t.u, t.v);
+    draw_line(t.v, t.w);
+    draw_line(t.w, t.u);
+    int x_min = gm_maxi(bounding_box[0], -(game_data.width/2));
+    int x_max = gm_mini(bounding_box[1], game_data.width / 2);
+    int y_min = gm_maxi(bounding_box[2], -game_data.height / 2);
+    int y_max = gm_mini(bounding_box[3], game_data.height/2);
+    // #pragma omp parallel for
+    // for (int x = x_min; x < x_max; x++){
+    //     for (int y = y_min; y <= y_max; y++){
+    //         vec3 p = triangle_barycentric(t, (vec3){x, y, 0});
+    //         vec3 color = {255, 255, 255};
+    //         color.x *= p.x; color.y *= p.y; color.z *= p.z;
+    //         // if (p.x >= 0 && p.y >= 0 && p.z >= 0){
+    //         //     draw_pointc((vec3){x, y, 1}, color);
+    //         // }
+    //     }
+    // }
 }

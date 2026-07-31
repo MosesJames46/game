@@ -4,32 +4,43 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include "headers/draw.h"
-#include "headers/game_utility.h"
-#include "headers/vector3.h"
+#include "headers/objectparser.h"
+#include "headers/object.h"
 #include "headers/Matrix3x3.h"
 
+/*
+    GCC compiling SDL
+
+    https://www.reddit.com/r/cpp_questions/comments/1g2vsj7/how_are_you_supposed_to_use_a_library_like_sdl2/
+*/
 
 
 int main(int argc, char* argv []){
     bool initialized = init_game();
-    //draw_line(u, v, window);
-    //p1 = mat3x3_rotate((vec3){0, 180, 0}, p1);
-    vec3 axis = {0, 0, 0};
-    vec3 p1 = {-50, 0, 1};
-    vec3 p2 = {50, 0.f, 1};
-    vec3 p3 = {0, 50, 1};
-
     SDL_Event e;
     const float delta = 1.f/60.f;
 
     float dt = 0;
     float z_axis = 0;
     float current_time = SDL_GetTicks() / 1000;
+
+    int v_begin, v_end, v_size;
+    v_begin = v_end = v_size = 0;
+    char* object = read_in_file("teapot.obj", "rb");
+    float* vertices = collect_vertex_data_from_buffer(object, &v_begin, &v_end, &v_size);
+
+    int f_begin, f_end, f_size;
+    f_begin = f_end = f_size = 0;
+    unsigned int* faces = collect_face_data_from_buffer(object, &f_begin, &f_end, &f_size);
+
+    float* vertex_buffer = get_vertex_buffer(faces, f_size, vertices);
     
     bool quit = (initialized) ? false : true;
     while (!quit){
-        dt += 1 * delta;
-        //printf("%f\n", z_axis);
+        float time_now = SDL_GetTicks() / 1000;
+        float time_passed = time_now - current_time;
+        current_time = time_now;
+        dt += delta;
 
         //Clear screen
         SDL_SetRenderDrawColor(game_data.renderer, 0, 0, 0, 255);
@@ -47,7 +58,13 @@ int main(int argc, char* argv []){
             }
         }
 
-        draw_triangle((Triangle){p1, p2, p3});
+        draw_object(faces, f_size, vertices, v_size);
+        for (int i = 0; i < v_size; i+=3){
+            vec3 r = mat3x3_rotate((vec3){0, dt, 0}, (vec3){vertices[i], vertices[i + 1], vertices[i + 2]});
+            vertices[i] = r.x;
+            vertices[i + 1] = r.y;
+            vertices[i + 2] = r.z;
+        }
         SDL_RenderPresent(game_data.renderer);
     }
     
