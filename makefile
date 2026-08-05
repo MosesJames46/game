@@ -1,6 +1,6 @@
 objects = main.o draw.o game_utility.o game_math.o game_data.o Matrix3x3.o triangle.o \
 		vector3.o vector2.o game_string.o gamevf_vector.o gamevi_vector.o \
-		object.o objectparser.o
+		object.o 
 h_files = headers/draw.h headers/game_utility.h headers/vector2.h headers/Matrix3x3.h  headers/
 includes = `pkg-config --cflags --libs sdl2`
 libs = -L usr/local/Cellar/sdl2/2.32.10/libs
@@ -49,10 +49,6 @@ gamevi_vector.o : source/gamevi_vector.c headers/gamevi_vector.h headers/game_st
 
 object.o : source/object.c headers/object.h
 			$(CC) source/object.c
-
-objectparser.o : source/objectparser.c headers/objectparser.h
-				$(CC) source/objectparser.c
-
 
 clean: 
 	rm main $(objects)

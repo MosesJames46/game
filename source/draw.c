@@ -6,6 +6,7 @@
 #include "../headers/game_math.h"
 #include "../headers/draw.h"
 #include "../headers/Matrix3x3.h"
+#include "../headers/object.h"
 
 
 
@@ -16,26 +17,14 @@ void draw_line(vec3 u, vec3 v){
 
     bool steep = gm_roundf(fabsf(v.x - u.x)) < gm_roundf(fabsf(v.y - u.y));
 
-    /*
-        Our draw function iterates over the range of x values. Because of this, if the slope is steep, that means that
-        the line on the y axis for our 2 points is larger than the line on the x-axis for our 2 points. Iterating over x 
-        will not give us enough unqiue points to match our y line. Therefore, we mimic a transpose, by swapping our x and y
-        for the corresponsing points. i.e. taking our x-line and making it our y-line and vice versa. However, we must remember
-        that if our slope is steep, we must place the respective x/y component back into the buffer/drawing order.  
-    */
     if (steep){
-        //Think of swap the maginitude of each points component.
         swapf(&u.x, &u.y);
         swapf(&v.x, &v.y);
     }
-    /*
-        Because we want to perform the drawing operation left to right, we swap our points if and only if our first point's
-        x position is larger than our second point's x position.
-    */
+
     if (u.x > v.x){
         swapf(&u.x, &v.x);
         swapf(&u.y, &v.y);
-        //swapf(&u.z, &v.z);
     }
     
 
@@ -43,31 +32,17 @@ void draw_line(vec3 u, vec3 v){
     float length_of_y = v.y - u.y;
 
     for (float x = u.x; x < v.x; x++){
-        //We obtain the length of each point's corresponding compenent with respect to their axis.
-        //The length of the line on the x-axis is: v.x - u.x
-        //The length of the line on the y-axis is: v.y - u.y
-        //t represents the amount currently traversed on the x line. This is basically linear interpolation.
-        /*
-            x - u.x will equal v.x - u.x only when x == v.x. But since x < v.x is the condition of our for loop,
-            this will never happen.
-
-
-        */
         float t = (x - u.x) / length_of_x;
-
-        /*
-            Start at u.y and increase only by percentages of our y line. 
-        */
         float y = gm_roundf(u.y + length_of_y * t);
         if (steep){
-            //Draw points
             draw_point((vec3){y, x, 0});
         }else{
-            //Draw points
             draw_point((vec3){x, y, 0});
         }
     }
 }
+
+
 
 vec3 display_coordinate(vec3 u){
     //(width / 2) + point
@@ -110,7 +85,7 @@ void draw_pointc(vec3 u, vec3 color){
     
     
     //set point color. Call SDL_SetRenderDrawColor.
-    SDL_SetRenderDrawColor(game_data.renderer, 255, 255, 255, 255);
+    SDL_SetRenderDrawColor(game_data.renderer, color.x, color.y, color.z, 255);
     //draw point on screen. Call SDL_RenderDrawPoint.
     SDL_RenderDrawPoint(game_data.renderer, u.x, u.y);
 
@@ -164,20 +139,14 @@ void draw_triangle(Triangle t){
    draw_rasterize(t, bounding_box);
 }
 
-void draw_object(unsigned int* faces, int f_size, float* vertices, int v_size){
-    float scale = 50;
+void draw_object(struct Object* object, float scale){
 
-    for(int i = 0; i < f_size; i += 3){
-        unsigned int f1 = (faces[i] - 1) * 3;
-        unsigned int f2 = (faces[i + 1] - 1) * 3;
-        unsigned int f3 = (faces[i + 2] - 2) * 3;
-
-        vec3 a = (vec3){vertices[f1] * scale, vertices[f1 + 1] * scale, vertices[f1 + 2] * scale};
-        vec3 b = (vec3){vertices[f2] * scale, vertices[f2 + 1] * scale, vertices[f2 + 2] * scale};
-        vec3 c = (vec3){vertices[f3] * scale, vertices[f3 + 1] * scale, vertices[f3 + 2] * scale};
+    for (int i = 0; i < object->vb_size; i+=9){
+        vec3 a = (vec3){object->vertex_buffer[i] * scale, object->vertex_buffer[i + 1] * scale, object->vertex_buffer[i + 2]};
+        vec3 b = (vec3){object->vertex_buffer[i + 3] * scale, object->vertex_buffer[i + 4] * scale, object->vertex_buffer[i + 5]};
+        vec3 c = (vec3){object->vertex_buffer[i + 6] * scale, object->vertex_buffer[i + 7] * scale, object->vertex_buffer[i + 8]};
 
         Triangle t = (Triangle){a, b, c};
-
         draw_triangle(t);
     }
 }
@@ -188,21 +157,21 @@ void draw_bounding_box2D(Triangle t, float bound_box[4]){
     */
     //x
     float min_x;
-    min_x = gm_minf(t.u.x, t.v.x);
-    min_x = gm_minf(min_x, t.w.x);
+    min_x = gm_minf(t.A.x, t.B.x);
+    min_x = gm_minf(min_x, t.C.x);
 
     float max_x;
-    max_x = gm_maxf(t.u.x, t.v.x);
-    max_x = gm_maxf(max_x, t.w.x);
+    max_x = gm_maxf(t.A.x, t.B.x);
+    max_x = gm_maxf(max_x, t.C.x);
 
     //y
     float min_y;
-    min_y = gm_minf(t.u.y, t.v.y);
-    min_y = gm_minf(min_y, t.w.y);
+    min_y = gm_minf(t.A.y, t.B.y);
+    min_y = gm_minf(min_y, t.C.y);
 
     float max_y;
-    max_y = gm_maxf(t.u.y, t.v.y);
-    max_y = gm_maxf(max_y, t.w.y);
+    max_y = gm_maxf(t.A.y, t.B.y);
+    max_y = gm_maxf(max_y, t.C.y);
     bound_box[0] = min_x;
     bound_box[1] = max_x;
     bound_box[2] = min_y;
@@ -211,22 +180,56 @@ void draw_bounding_box2D(Triangle t, float bound_box[4]){
 }
 
 void draw_rasterize(Triangle t, float bounding_box[4]){
-    draw_line(t.u, t.v);
-    draw_line(t.v, t.w);
-    draw_line(t.w, t.u);
+    // draw_line(t.A, t.B);
+    // draw_line(t.B, t.C);
+    // draw_line(t.C, t.A);
     int x_min = gm_maxi(bounding_box[0], -(game_data.width/2));
     int x_max = gm_mini(bounding_box[1], game_data.width / 2);
     int y_min = gm_maxi(bounding_box[2], -game_data.height / 2);
     int y_max = gm_mini(bounding_box[3], game_data.height/2);
-    // #pragma omp parallel for
-    // for (int x = x_min; x < x_max; x++){
-    //     for (int y = y_min; y <= y_max; y++){
-    //         vec3 p = triangle_barycentric(t, (vec3){x, y, 0});
-    //         vec3 color = {255, 255, 255};
-    //         color.x *= p.x; color.y *= p.y; color.z *= p.z;
-    //         // if (p.x >= 0 && p.y >= 0 && p.z >= 0){
-    //         //     draw_pointc((vec3){x, y, 1}, color);
-    //         // }
-    //     }
-    // }
+
+    //if (area < 1) return;
+
+    vec3 temp;
+    float area = signed_area(t);
+    float z;
+    for (int x = x_min; x <= x_max; x++){
+        for (int y = y_min; y <= y_max; y++){
+            vec3 p = (vec3){x, y, 0};
+
+            // float ABP = signed_area((Triangle){t.A, t.B, p});
+            // float BCP = signed_area((Triangle){t.B, t.C, p});
+            // float CAP = signed_area((Triangle){t.C, t.A, p});
+
+            float ABP = signed_triangle_area((Triangle){t.A, t.B, p});
+            float BCP = signed_triangle_area((Triangle){t.B, t.C, p});
+            float CAP = signed_triangle_area((Triangle){t.C, t.A, p});
+            //z = alpha * t.A.z + beta * t.B.z + gamma * t.C.z;
+            if (ABP < 0 ||  BCP < 0 || CAP < 0) continue;
+            float weight_A = BCP / area;
+            float weight_B = CAP / area;
+            float weight_C = ABP / area;
+            vec3 color = {255, 255, 255};
+            z = t.A.z * weight_A + t.B.z * weight_B + t.C.z * weight_C;
+            color.x *= z; color.y *= z; color.z *=z;
+            temp = NDC_coordinate((vec3){x, y, 0});
+            temp = basic_projection(temp);
+            temp = screen_coordinate(temp);
+
+            if (z > 0 && z >= game_data.z_buffer[(int)temp.x][(int)temp.y]) {
+                draw_pointc((vec3){x, y, 1}, color);
+                game_data.z_buffer[(int)temp.x][(int)temp.y] = z;
+            }
+        }
+    }
+
+    for (int x = x_min; x <= x_max; x++){
+        for (int y = y_min; y <= y_max; y++){
+            //printf("%f\n", game_data.z_buffer[(int)temp.x][(int)temp.y]);
+            temp = NDC_coordinate((vec3){x, y, 0});
+            temp = basic_projection(temp);
+            temp = screen_coordinate(temp);
+            game_data.z_buffer[(int)temp.x][(int)temp.y] = -1;
+        }
+    }
 }
