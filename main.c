@@ -23,7 +23,7 @@ int main(int argc, char* argv []){
     float z_axis = 0;
     float current_time = SDL_GetTicks() / 1000;
 
-    struct Object* object = init_object("diablo3_pose.obj", "rb");
+    struct Object* object = init_object("cube.obj", "rb");
 
     bool quit = (initialized) ? false : true;
     float time_now = SDL_GetTicks() / 1000;
@@ -45,9 +45,9 @@ int main(int argc, char* argv []){
             }
         }
         
-        draw_object(object, 100);
+        draw_object(object, 50);
         for (int i = 0; i < object->vb_size; i+=3){
-            vec3 r = mat3x3_rotate((vec3){.5, .5, .5}, (vec3){object->vertex_buffer[i], object->vertex_buffer[i + 1], object->vertex_buffer[i + 2]});
+            vec3 r = mat3x3_rotate((vec3){0, .1, 0}, (vec3){object->vertex_buffer[i], object->vertex_buffer[i + 1], object->vertex_buffer[i + 2]});
             object->vertex_buffer[i] = r.x;
             object->vertex_buffer[i + 1] = r.y;
             object->vertex_buffer[i + 2] = r.z;

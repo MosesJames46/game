@@ -205,20 +205,24 @@ void draw_rasterize(Triangle t, float bounding_box[4]){
             float BCP = signed_triangle_area((Triangle){t.B, t.C, p});
             float CAP = signed_triangle_area((Triangle){t.C, t.A, p});
             //z = alpha * t.A.z + beta * t.B.z + gamma * t.C.z;
-            if (ABP < 0 ||  BCP < 0 || CAP < 0) continue;
-            float weight_A = BCP / area;
-            float weight_B = CAP / area;
-            float weight_C = ABP / area;
-            vec3 color = {255, 255, 255};
-            z = t.A.z * weight_A + t.B.z * weight_B + t.C.z * weight_C;
-            color.x *= z; color.y *= z; color.z *=z;
-            temp = NDC_coordinate((vec3){x, y, 0});
-            temp = basic_projection(temp);
-            temp = screen_coordinate(temp);
-
-            if (z > 0 && z >= game_data.z_buffer[(int)temp.x][(int)temp.y]) {
-                draw_pointc((vec3){x, y, 1}, color);
-                game_data.z_buffer[(int)temp.x][(int)temp.y] = z;
+            if (ABP >= 0 && BCP >= 0 && CAP >= 0){
+                float weight_A = BCP / area;
+                float weight_B = CAP / area;
+                float weight_C = ABP / area;
+                vec3 color = {255, 255, 255};
+                z = t.A.z * weight_A + t.B.z * weight_B + t.C.z * weight_C;
+                color.x *= z; color.y *= z; color.z *=z;
+                temp = NDC_coordinate((vec3){x, y, 0});
+                temp = basic_projection(temp);
+                temp = screen_coordinate(temp);
+                //printf("%f\n", z);
+                //draw_pointc((vec3){x, y, 1}, color);
+                //draw_pointc((vec3){x, y, 1}, color);
+                //printf("%f %f\n", temp.x, temp.y);
+                if (z > 0 && z >= game_data.z_buffer[(int)temp.x][(int)temp.y]) {
+                    draw_pointc((vec3){x, y, 1}, color);
+                    game_data.z_buffer[(int)temp.x][(int)temp.y] = z;
+                }
             }
         }
     }
