@@ -145,16 +145,23 @@ void draw_object(struct Object* object, float scale){
         vec3 a = (vec3){object->vertex_buffer[i] * scale, object->vertex_buffer[i + 1] * scale, object->vertex_buffer[i + 2]};
         vec3 b = (vec3){object->vertex_buffer[i + 3] * scale, object->vertex_buffer[i + 4] * scale, object->vertex_buffer[i + 5]};
         vec3 c = (vec3){object->vertex_buffer[i + 6] * scale, object->vertex_buffer[i + 7] * scale, object->vertex_buffer[i + 8]};
-        
+        //printf("%f %f %f\n", a.z, b.z, c.z);
+
+        //Very Naive projection
+        a = project(a);
+        b = project(b);
+        c = project(c);
+
         Triangle t = (Triangle){a, b, c};
         draw_triangle(t);
     }
 }
 
-
 vec3 project(vec3 p){
-    float x = (p.x + 1.f) * ((float) game_data.width / 2.f) - (float)game_data.width / 2.f;
-    float y = (p.y + 1.f) * ((float)game_data.height / 2.f) - (float)game_data.height / 2.f;
+    float c = 3.f;
+    float x = p.x / (1 - p.z / c);
+    float y = p.y / (1 - p.z / c);
+    float z = p.z / (1 - p.z / c);
     return (vec3){x, y, p.z};
 }
 
@@ -195,11 +202,10 @@ void draw_rasterize(Triangle t, float bounding_box[4]){
     int x_max = gm_mini(bounding_box[1], game_data.width / 2);
     int y_min = gm_maxi(bounding_box[2], -game_data.height / 2);
     int y_max = gm_mini(bounding_box[3], game_data.height/2);
-    
 
     vec3 screen_coordinates;
     float z;
-    #pragma GCC unroll 9
+    #pragma omp parallel for
     for (int x = x_min; x <= x_max; x++){
         for (int y = y_min; y <= y_max; y++){
             vec3 p = (vec3){x, y, 0};
@@ -222,7 +228,7 @@ void draw_rasterize(Triangle t, float bounding_box[4]){
 
             //Ensure screen_coordinate is within range of viewport
             if ((int)screen_coordinates.x >= game_data.width || (int)screen_coordinates.y >= game_data.height) continue;
-            if (z >= game_data.z_buffer[(int)screen_coordinates.x][(int)screen_coordinates.y]){
+            if (z >= game_data.z_buffer[(int)screen_coordinates.x][(int)screen_coordinates.y] && z < 1){
                 draw_pointc((vec3){x, y, 1}, color);
                 game_data.z_buffer[(int)screen_coordinates.x][(int)screen_coordinates.y] = z;
             }

@@ -12,5 +12,6 @@ float signed_triangle_area(Triangle t){
     vec3 B = t.B;
     vec3 C = t.C;
     
+    //Look up shoelace method for performing signed area of a polygon.
     return ((B.y - A.y)*(B.x + A.x) + (C.y - B.y)*(C.x + B.x) + (A.y - C.y)*(A.x + C.x));
 }
