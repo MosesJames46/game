@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include "headers/draw.h"
-#include "headers/objectparser.h"
 #include "headers/object.h"
 #include "headers/Matrix3x3.h"
 
@@ -24,24 +23,12 @@ int main(int argc, char* argv []){
     float z_axis = 0;
     float current_time = SDL_GetTicks() / 1000;
 
-    int v_begin, v_end, v_size;
-    v_begin = v_end = v_size = 0;
-    char* object = read_in_file("teapot.obj", "rb");
-    float* vertices = collect_vertex_data_from_buffer(object, &v_begin, &v_end, &v_size);
+    struct Object* object = init_object("cube.obj", "rb");
 
-    int f_begin, f_end, f_size;
-    f_begin = f_end = f_size = 0;
-    unsigned int* faces = collect_face_data_from_buffer(object, &f_begin, &f_end, &f_size);
-
-    float* vertex_buffer = get_vertex_buffer(faces, f_size, vertices);
-    
     bool quit = (initialized) ? false : true;
+    float time_now = SDL_GetTicks() / 1000;
+    float time_before = time_now;
     while (!quit){
-        float time_now = SDL_GetTicks() / 1000;
-        float time_passed = time_now - current_time;
-        current_time = time_now;
-        dt += delta;
-
         //Clear screen
         SDL_SetRenderDrawColor(game_data.renderer, 0, 0, 0, 255);
         SDL_RenderClear(game_data.renderer);
@@ -57,14 +44,16 @@ int main(int argc, char* argv []){
                 quit = true;
             }
         }
-
-        draw_object(faces, f_size, vertices, v_size);
-        for (int i = 0; i < v_size; i+=3){
-            vec3 r = mat3x3_rotate((vec3){0, dt, 0}, (vec3){vertices[i], vertices[i + 1], vertices[i + 2]});
-            vertices[i] = r.x;
-            vertices[i + 1] = r.y;
-            vertices[i + 2] = r.z;
+        
+        draw_object(object, 50);
+        for (int i = 0; i < object->vb_size; i+=3){
+            vec3 r = mat3x3_rotate((vec3){0, .1, 0}, (vec3){object->vertex_buffer[i], object->vertex_buffer[i + 1], object->vertex_buffer[i + 2]});
+            object->vertex_buffer[i] = r.x;
+            object->vertex_buffer[i + 1] = r.y;
+            object->vertex_buffer[i + 2] = r.z;
         }
+
+        //if (dt > 360.f) dt = 0.0;
         SDL_RenderPresent(game_data.renderer);
     }
     

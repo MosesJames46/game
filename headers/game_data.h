@@ -12,6 +12,7 @@
 typedef struct Game_Data{
     int width;
     int height;
+    float** z_buffer;
     SDL_Window* window;
     SDL_Renderer* renderer;
 }Game_Data;

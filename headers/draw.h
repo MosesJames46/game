@@ -7,6 +7,8 @@
 #define DRAW
 #define POINTS2D "%f, %f"
 
+extern struct Object;
+
 //Draw to screen https://stackoverflow.com/questions/20579658/how-to-draw-pixels-in-sdl-2-0
 //Opening a window: https://stackoverflow.com/questions/34424816/sdl-window-does-not-show
 
@@ -23,9 +25,10 @@ vec3 screen_coordinate(vec3 point);
 vec3 NDC_coordinate(vec3 point);
 vec3 world_coordinate(vec3 point);
 
+vec3 project(vec3 A);
 //Functions used to fill lines
 void draw_bounding_box2D(Triangle t, float bound_box[4]);
 void draw_rasterize(Triangle t, float bounding_box[4]);
 void draw_triangle(Triangle t);
-void draw_object(unsigned int* faces, int f_size, float* vertices, int size);
+void draw_object(struct Object* object, float size);
 #endif
