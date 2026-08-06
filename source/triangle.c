@@ -4,13 +4,13 @@
 #include <stdio.h>
 
 float signed_area(Triangle t){
-    return (t.B.x - t.A.x)*(t.C.y - t.A.y) - (t.B.y - t.A.y)*(t.C.x - t.A.x);
+    return (t.B.x - t.A.x)*(t.C.y - t.A.y) - (t.B.y - t.A.y)*(t.C.x - t.A.x) * .5f;
 }
 
 float signed_triangle_area(Triangle t){
     vec3 A = t.A;
     vec3 B = t.B;
     vec3 C = t.C;
-
-    return ((B.y - A.y)*(B.x + A.x) + (C.y - B.y)*(C.x + B.x) + (A.y - C.y)*(A.x + C.x)) * .5f;
+    
+    return ((B.y - A.y)*(B.x + A.x) + (C.y - B.y)*(C.x + B.x) + (A.y - C.y)*(A.x + C.x));
 }
