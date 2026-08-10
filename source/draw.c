@@ -78,7 +78,7 @@ vec3 NDC_coordinate(vec3 point){
 
 void draw_pointc(vec3 u, vec3 color){
     //Set to screen coordinates.
-    u = basic_projection(u);
+    //u = basic_projection(u);
     u = NDC_coordinate(u);
     
     u = screen_coordinate(u);
@@ -140,15 +140,29 @@ void draw_triangle(Triangle t){
 }
 
 void draw_object(struct Object* object, float scale){
-
+    //PRINT("%f ", object->vertex_buffer, object->vb_size);
     for (int i = 0; i < object->vb_size; i+=9){
         vec3 a = (vec3){object->vertex_buffer[i] * scale, object->vertex_buffer[i + 1] * scale, object->vertex_buffer[i + 2]};
         vec3 b = (vec3){object->vertex_buffer[i + 3] * scale, object->vertex_buffer[i + 4] * scale, object->vertex_buffer[i + 5]};
         vec3 c = (vec3){object->vertex_buffer[i + 6] * scale, object->vertex_buffer[i + 7] * scale, object->vertex_buffer[i + 8]};
+        //printf("%f %f %f\n", a.z, b.z, c.z);
+
+        //Very Naive projection
+        a = project(a);
+        b = project(b);
+        c = project(c);
 
         Triangle t = (Triangle){a, b, c};
         draw_triangle(t);
     }
+}
+
+vec3 project(vec3 p){
+    float c = 3.f;
+    float x = p.x / (1 - p.z / c);
+    float y = p.y / (1 - p.z / c);
+    float z = p.z / (1 - p.z / c);
+    return (vec3){x, y, p.z};
 }
 
 void draw_bounding_box2D(Triangle t, float bound_box[4]){
@@ -180,60 +194,44 @@ void draw_bounding_box2D(Triangle t, float bound_box[4]){
 }
 
 void draw_rasterize(Triangle t, float bounding_box[4]){
-    // draw_line(t.A, t.B);
-    // draw_line(t.B, t.C);
-    // draw_line(t.C, t.A);
+    float area = signed_triangle_area(t);
+
+    if (area < 1) return;
+
     int x_min = gm_maxi(bounding_box[0], -(game_data.width/2));
     int x_max = gm_mini(bounding_box[1], game_data.width / 2);
     int y_min = gm_maxi(bounding_box[2], -game_data.height / 2);
     int y_max = gm_mini(bounding_box[3], game_data.height/2);
 
-    //if (area < 1) return;
-
-    vec3 temp;
-    float area = signed_area(t);
+    vec3 screen_coordinates;
     float z;
+    #pragma omp parallel for
     for (int x = x_min; x <= x_max; x++){
         for (int y = y_min; y <= y_max; y++){
             vec3 p = (vec3){x, y, 0};
 
-            // float ABP = signed_area((Triangle){t.A, t.B, p});
-            // float BCP = signed_area((Triangle){t.B, t.C, p});
-            // float CAP = signed_area((Triangle){t.C, t.A, p});
+            float alpha = signed_triangle_area((Triangle){t.B, t.C, p}) / area;
+            float beta = signed_triangle_area((Triangle){t.C, t.A, p}) / area;
+            float gamma = signed_triangle_area((Triangle){t.A, t.B, p}) / area;
 
-            float ABP = signed_triangle_area((Triangle){t.A, t.B, p});
-            float BCP = signed_triangle_area((Triangle){t.B, t.C, p});
-            float CAP = signed_triangle_area((Triangle){t.C, t.A, p});
-            //z = alpha * t.A.z + beta * t.B.z + gamma * t.C.z;
-            if (ABP >= 0 && BCP >= 0 && CAP >= 0){
-                float weight_A = BCP / area;
-                float weight_B = CAP / area;
-                float weight_C = ABP / area;
-                vec3 color = {255, 255, 255};
-                z = t.A.z * weight_A + t.B.z * weight_B + t.C.z * weight_C;
-                color.x *= z; color.y *= z; color.z *=z;
-                temp = NDC_coordinate((vec3){x, y, 0});
-                temp = basic_projection(temp);
-                temp = screen_coordinate(temp);
-                //printf("%f\n", z);
-                //draw_pointc((vec3){x, y, 1}, color);
-                //draw_pointc((vec3){x, y, 1}, color);
-                //printf("%f %f\n", temp.x, temp.y);
-                if (z > 0 && z >= game_data.z_buffer[(int)temp.x][(int)temp.y]) {
-                    draw_pointc((vec3){x, y, 1}, color);
-                    game_data.z_buffer[(int)temp.x][(int)temp.y] = z;
-                }
+            if (alpha < 0 || beta < 0 || gamma < 0) continue;
+
+            vec3 color = {255, 255, 255};
+            //Interpolated z-value applied to color
+            z = t.A.z * alpha + t.B.z * beta + t.C.z * gamma;
+            color.x *= z; color.y *= z; color.z *= z;
+
+            //Get screen coordinate position which relates to z-buffer value.
+            screen_coordinates = NDC_coordinate((vec3){x, y, 0});
+            screen_coordinates = basic_projection(screen_coordinates);
+            screen_coordinates = screen_coordinate(screen_coordinates);
+
+            //Ensure screen_coordinate is within range of viewport
+            if ((int)screen_coordinates.x >= game_data.width || (int)screen_coordinates.y >= game_data.height) continue;
+            if (z >= game_data.z_buffer[(int)screen_coordinates.x][(int)screen_coordinates.y] && z < 1){
+                draw_pointc((vec3){x, y, 1}, color);
+                game_data.z_buffer[(int)screen_coordinates.x][(int)screen_coordinates.y] = z;
             }
-        }
-    }
-
-    for (int x = x_min; x <= x_max; x++){
-        for (int y = y_min; y <= y_max; y++){
-            //printf("%f\n", game_data.z_buffer[(int)temp.x][(int)temp.y]);
-            temp = NDC_coordinate((vec3){x, y, 0});
-            temp = basic_projection(temp);
-            temp = screen_coordinate(temp);
-            game_data.z_buffer[(int)temp.x][(int)temp.y] = -1;
         }
     }
 }

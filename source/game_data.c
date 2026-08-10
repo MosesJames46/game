@@ -39,7 +39,7 @@ bool init_game(){
     if (game_data.z_buffer){
         for(int i = 0; i < game_data.height; i++){
             for(int j = 0; j < game_data.width; j++){
-                game_data.z_buffer[i][j] = -1;
+                game_data.z_buffer[i][j] = 0;
             }
         }
     }

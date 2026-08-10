@@ -23,7 +23,7 @@ int main(int argc, char* argv []){
     float z_axis = 0;
     float current_time = SDL_GetTicks() / 1000;
 
-    struct Object* object = init_object("cube.obj", "rb");
+    struct Object* object = init_object("diablo3_pose.obj", "rb");
 
     bool quit = (initialized) ? false : true;
     float time_now = SDL_GetTicks() / 1000;
@@ -32,6 +32,13 @@ int main(int argc, char* argv []){
         //Clear screen
         SDL_SetRenderDrawColor(game_data.renderer, 0, 0, 0, 255);
         SDL_RenderClear(game_data.renderer);
+        //Reset z-buffer every frame.
+        #pragma omp parallel for
+        for (int i =0; i < game_data.width; i++){
+            for (int j = 0; j < game_data.height; j++){
+                game_data.z_buffer[i][j] = 0;
+            }
+        }
 
         while (SDL_PollEvent(&e)){
             if (e.type == SDL_QUIT){
@@ -45,9 +52,10 @@ int main(int argc, char* argv []){
             }
         }
         
-        draw_object(object, 50);
+        draw_object(object, 150);
+        //#pragma GCC unroll 3
         for (int i = 0; i < object->vb_size; i+=3){
-            vec3 r = mat3x3_rotate((vec3){0, .1, 0}, (vec3){object->vertex_buffer[i], object->vertex_buffer[i + 1], object->vertex_buffer[i + 2]});
+            vec3 r = mat3x3_rotate((vec3){0, 2, 0}, (vec3){object->vertex_buffer[i], object->vertex_buffer[i + 1], object->vertex_buffer[i + 2]});
             object->vertex_buffer[i] = r.x;
             object->vertex_buffer[i + 1] = r.y;
             object->vertex_buffer[i + 2] = r.z;

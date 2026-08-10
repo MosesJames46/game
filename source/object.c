@@ -215,6 +215,7 @@ struct Object* init_object(const char* location, const char* readmode){
     int start , end;
     start = end = 0;
     object->vertices = collect_vertex_data_from_buffer(object->buffer, &start, &end, &object->v_size);
+    //normalize_vertices(&object);
     //PRINT("%f ", object->vertices, object->v_size);
     object->faces = collect_face_data_from_buffer(object->buffer, &start, &end, &object->f_size);
     //PRINT("%u ", object->faces, object->f_size);
@@ -265,7 +266,9 @@ void normalize_vertices(struct Object** object){
         (*object)->vertices[i] = norm_x;
         float norm_y = (((y - min_y) * 2.f) / y_mag) - 1.f;
         (*object)->vertices[i + 1] = norm_y;
-        float norm_z = (((z - min_z) * 2.f) / z_mag) - 1.f;
+
+        //Normalize z values to 0 - 1 range.
+        float norm_z = (((z - min_z)) / z_mag);
         (*object)->vertices[i + 2] = norm_z;
     }
 }
