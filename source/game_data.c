@@ -32,13 +32,13 @@ bool init_game(){
     }
     SDL_CreateWindowAndRenderer(game_data.width, game_data.height, 0, &game_data.window, &game_data.renderer);
     
-    game_data.z_buffer = malloc(sizeof(float*) * (game_data.height));
-    for (int i = 0; i < game_data.height; i++){
-        game_data.z_buffer[i] = malloc(sizeof(float) * game_data.width);
+    game_data.z_buffer = malloc(sizeof(float*) * (game_data.width));
+    for (int i = 0; i < game_data.width; i++){
+        game_data.z_buffer[i] = malloc(sizeof(float) * game_data.height);
     }
     if (game_data.z_buffer){
-        for(int i = 0; i < game_data.height; i++){
-            for(int j = 0; j < game_data.width; j++){
+        for(int i = 0; i < game_data.width; i++){
+            for(int j = 0; j < game_data.height; j++){
                 game_data.z_buffer[i][j] = 0;
             }
         }

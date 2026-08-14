@@ -17,6 +17,7 @@ typedef struct Draw_Data{
 } Draw_Data;
 
 void draw_line(vec3 u, vec3 v);
+void draw_lines(Triangle t);
 vec3 display_coordinate(vec3 u);
 void draw_pointc(vec3 u, vec3 color);
 void draw_point(vec3 u);

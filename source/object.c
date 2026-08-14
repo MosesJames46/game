@@ -2,6 +2,7 @@
 #define ADDRESS_LOCATION(A) printf("%p\n", (void*)A)
 #include <limits.h>
 #include <float.h>
+#include "../headers/Matrix3x3.h"
 
 int open_file(FILE** file, const char* file_location, const char* read_mode){
     //Attempts to create a file object. Returns zero on success.
@@ -270,5 +271,15 @@ void normalize_vertices(struct Object** object){
         //Normalize z values to 0 - 1 range.
         float norm_z = (((z - min_z)) / z_mag);
         (*object)->vertices[i + 2] = norm_z;
+    }
+}
+
+void rotate_object(struct Object* object, float axis[3]){
+    #pragma opm parallel for
+    for (int i = 0; i < object->vb_size; i+=3){
+        vec3 r = mat3x3_rotate((vec3){axis[0], axis[1], axis[2]}, (vec3){object->vertex_buffer[i], object->vertex_buffer[i + 1], object->vertex_buffer[i + 2]});
+        object->vertex_buffer[i] = r.x; 
+        object->vertex_buffer[i + 1] = r.y;
+        object->vertex_buffer[i + 2] = r.z;
     }
 }

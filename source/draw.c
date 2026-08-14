@@ -5,9 +5,11 @@
 #include "../headers/game_utility.h"
 #include "../headers/game_math.h"
 #include "../headers/draw.h"
-#include "../headers/Matrix3x3.h"
 #include "../headers/object.h"
-
+#include <time.h>
+#include "../headers/Camera.h"
+#include "../headers/Matrix4.h"
+#include "/usr/local/opt/libomp/include/omp.h"
 
 
 struct Game_Data game_data;
@@ -139,26 +141,70 @@ void draw_triangle(Triangle t){
    draw_rasterize(t, bounding_box);
 }
 
-void draw_object(struct Object* object, float scale){
+void draw_object(struct Object* object, float t){
     //PRINT("%f ", object->vertex_buffer, object->vb_size);
+    static float current = 0;
+
+    float axis[3] = {0, 1, 0};
+    //rotate_object(object, axis);
+    clock_t before  = clock();
+    #pragma omp parallel for
+    struct Camera c;
+    vec3 camera_position = (vec3){1, 0, -1};
+    vec3 center = (vec3){0, 0, 0};
+    vec3 up = (vec3){0, 1, 0};
+    Mat4x4 view = mat4x4_view(camera_position, center);
+    // Mat4x4 I =mat4x4_identity();
+    // I.m[0][3] = -center.x; I.m[1][3] = -center.y; I.m[2][3] = -center.z;
+    // view = mat4x4_mul(view, I);
+
+    vec3 obj_position = (vec3){0, 0, 0};
+    Mat4x4 model = mat4x4_identity();
+    //Mat4x4 view = mat4x4_model_view(camera_position, center);
+    //Mat4x4 view = mat4x4_diablo_viewport();
+    Mat4x4 p = mat4x4_perspective(3, vec3_magnitude(vec3_distance(camera_position, center)));
+    //Mat4x4 pv = mat4x4_mul(p, v);
+    //mat4x4_print_mat4x4(m);
+    //vec3_print_vector3(c.right); vec3_print_vector3(c.up); vec3_print_vector3(c.forward);
+    float scale = 100;
     for (int i = 0; i < object->vb_size; i+=9){
-        vec3 a = (vec3){object->vertex_buffer[i] * scale, object->vertex_buffer[i + 1] * scale, object->vertex_buffer[i + 2]};
-        vec3 b = (vec3){object->vertex_buffer[i + 3] * scale, object->vertex_buffer[i + 4] * scale, object->vertex_buffer[i + 5]};
-        vec3 c = (vec3){object->vertex_buffer[i + 6] * scale, object->vertex_buffer[i + 7] * scale, object->vertex_buffer[i + 8]};
-        //printf("%f %f %f\n", a.z, b.z, c.z);
+        vec3 a = (vec3){object->vertex_buffer[i], object->vertex_buffer[i + 1], object->vertex_buffer[i + 2]};
+        vec3 b = (vec3){object->vertex_buffer[i + 3], object->vertex_buffer[i + 4], object->vertex_buffer[i + 5]};
+        vec3 c = (vec3){object->vertex_buffer[i + 6], object->vertex_buffer[i + 7], object->vertex_buffer[i + 8]};
+        
 
-        //Very Naive projection
-        a = project(a);
-        b = project(b);
-        c = project(c);
+        a = mat4x4_scale(a, scale);
+        b = mat4x4_scale(b, scale);
+        c = mat4x4_scale(c, scale);
 
+        a.z /= scale;
+        b.z /= scale;
+        c.z /= scale;
+
+        // a = project(a);
+        // b = project(b);
+        // c = project(c);
+
+        a = mat4x4_translate(a, obj_position);
+        b = mat4x4_translate(b, obj_position);
+        c = mat4x4_translate(c, obj_position);
+
+
+        a = mat4x4_mulv3(view, a);
+        b = mat4x4_mulv3(view, b);
+        c = mat4x4_mulv3(view, c);
+        
         Triangle t = (Triangle){a, b, c};
         draw_triangle(t);
+        //draw_lines(t);
     }
+    clock_t after = clock();
+    printf("TIme elapsed in drawing: %f\n", (double)(after - before) / CLOCKS_PER_SEC);
 }
 
 vec3 project(vec3 p){
     float c = 3.f;
+
     float x = p.x / (1 - p.z / c);
     float y = p.y / (1 - p.z / c);
     float z = p.z / (1 - p.z / c);
@@ -196,16 +242,20 @@ void draw_bounding_box2D(Triangle t, float bound_box[4]){
 void draw_rasterize(Triangle t, float bounding_box[4]){
     float area = signed_triangle_area(t);
 
-    if (area < 1) return;
+    //If the area is less than 1, then the triangle is small. It could also be negative which means
+    //its a backwards facing triangle.
+    //if (area < 1) return;
 
     int x_min = gm_maxi(bounding_box[0], -(game_data.width/2));
     int x_max = gm_mini(bounding_box[1], game_data.width / 2);
     int y_min = gm_maxi(bounding_box[2], -game_data.height / 2);
     int y_max = gm_mini(bounding_box[3], game_data.height/2);
 
+    
     vec3 screen_coordinates;
     float z;
     #pragma omp parallel for
+    clock_t before = clock();
     for (int x = x_min; x <= x_max; x++){
         for (int y = y_min; y <= y_max; y++){
             vec3 p = (vec3){x, y, 0};
@@ -215,6 +265,7 @@ void draw_rasterize(Triangle t, float bounding_box[4]){
             float gamma = signed_triangle_area((Triangle){t.A, t.B, p}) / area;
 
             if (alpha < 0 || beta < 0 || gamma < 0) continue;
+            //if (alpha >= 0 || beta >= 0 || gamma >= 0) continue;
 
             vec3 color = {255, 255, 255};
             //Interpolated z-value applied to color
@@ -234,4 +285,13 @@ void draw_rasterize(Triangle t, float bounding_box[4]){
             }
         }
     }
+    clock_t after = clock();
+    //printf("Time elapsed in drawing: %f\n", ((double)after - before) / CLOCKS_PER_SEC);
+    
+}
+
+void draw_lines(Triangle t){
+    draw_line(t.A, t.B);
+    draw_line(t.B, t.C);
+    draw_line(t.C, t.A);
 }

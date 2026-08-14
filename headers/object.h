@@ -53,5 +53,6 @@ float* get_vertex_buffer(unsigned int* faces, int size, float* vertex_array);
 
 struct Object* init_object(const char* location, const char* readmode);
 void normalize_vertices(struct Object** object);
+void rotate_object(struct Object* object, float axis[3]);
 
 #endif
