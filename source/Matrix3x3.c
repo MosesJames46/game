@@ -3,10 +3,11 @@
 #include "../headers/game_utility.h"
 #include <math.h>
 #include <stdio.h>
+#include "/usr/local/opt/libomp/include/omp.h"
 
 Mat3x3 mat3x3_mul(Mat3x3 A, Mat3x3 B){
     Mat3x3 C;
-    
+    //#pragma opm parallel for
     for(int i = 0; i < 3; i++){
         int k = 0;
         float result = 0;
@@ -82,6 +83,7 @@ vec3 mat3x3_rotate(vec3 axis, vec3 point){
 vec3 mat3x3_mulv(Mat3x3 A, vec3 a){
     vec3 b;
     float br[3] = {0};
+    //#pragma omp paralell for
     for (int i = 0; i < 3; i++){
         float result = 0;
         result += A.m[i][0] * a.x;
