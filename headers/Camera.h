@@ -12,7 +12,7 @@ struct Camera{
 
 extern struct Camera camera;
 
-void camera_lookat(struct Camera* camera, vec3 lookat);
+void camera_lookat(struct Camera* camera, vec3 position, vec3 lookat, vec3 up);
 void init_camera(struct Camera* camera, vec3 position);
 
 

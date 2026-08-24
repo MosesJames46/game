@@ -8,7 +8,11 @@
 
 Mat4x4 mat4x4_mul(Mat4x4 A, Mat4x4 B){
     Mat4x4 C;
-    #pragma opm parallel for
+    //indices i and j are for accessing the rows and columns of the matrix.
+    //k is used to obtain the value from the respective row and column.
+    //We only select a new row only after every column as been accessed.
+    //We select new columns only after every value in the previous column has been accessed.
+    //k walks through rows in A and columns in B.
     for(int i = 0; i < 4; i++){
         for(int j = 0; j < 4; j++){
             float result = 0;
@@ -36,14 +40,12 @@ Mat4x4 mat4x4_identity(){
     return I;
 }
 
-vec3 mat4x4_rotate(vec3 axis, vec3 point){
+Mat4x4 mat4x4_rotate(vec3 axis){
     const float radian = 3.14159f / 180.f;
     
     //Multiply radian value by the value to rotate by for each component of axis.
     float xd = radian * axis.x;
-    Mat4x4 X;
-
-    mat4x4_init(&X);
+    Mat4x4 X = mat4x4_identity();
     X.m[0][0] = 1;
     X.m[1][1] = cosf(xd);
     X.m[1][2] = -sinf(xd);
@@ -52,8 +54,7 @@ vec3 mat4x4_rotate(vec3 axis, vec3 point){
     
      
     float yd = radian * axis.y;
-    Mat4x4 Y;
-    mat4x4_init(&Y);
+    Mat4x4 Y = mat4x4_identity();;
     Y.m[0][0] = cosf(yd);
     Y.m[0][2] = sinf(yd);
     Y.m[1][1] = 1;
@@ -61,8 +62,7 @@ vec3 mat4x4_rotate(vec3 axis, vec3 point){
     Y.m[2][2] = cosf(yd);
 
     float zd = radian * axis.z;
-    Mat4x4 Z;
-    mat4x4_init(&Z);
+    Mat4x4 Z = mat4x4_identity();
     Z.m[0][0] = cosf(zd);
     Z.m[0][1] = -sinf(zd);
     Z.m[1][0] = sinf(zd);
@@ -71,7 +71,7 @@ vec3 mat4x4_rotate(vec3 axis, vec3 point){
 
     Mat4x4 R = mat4x4_mul(Y, Z);
     R = mat4x4_mul(X, R);
-    return mat4x4_mulv3(R, point);
+    return R;
 }
 
 vec4 mat4x4_mulv(Mat4x4 A, vec4 a){
@@ -219,20 +219,23 @@ Mat4x4 mat4x4_inverse(Mat4x4 A){
     return A;
 }
 
-vec3 mat4x4_scale(vec3 p, float s){
+Mat4x4 mat4x4_scale(float s){
     Mat4x4 I = mat4x4_identity();
     I.m[0][0] *= s;
     I.m[1][1] *= s;
     I.m[2][2] *= s;
-    return mat4x4_mulv3(I, p);
+    return I;
 }
 
 
-vec3 mat4x4_translate(vec3 p, vec3 x){
+Mat4x4 mat4x4_translate(vec3 x){
     //Defines how far to translate the object.
-    Mat4x4 m = mat4x4_create_matrixv4((vec4){1, 0, 0, x.x}, (vec4){0, 1, 0, x.y}, (vec4){0, 0, 1, x.z});
-    vec4 result = mat4x4_mulv(m, (vec4){p.x, p.y, p.z, 1});
-    return (vec3){result.x, result.y, result.z};
+    Mat4x4 m = mat4x4_identity();
+    m.m[0][3] = x.x;
+    m.m[1][3] = x.y;
+    m.m[2][3] = x.z;
+    //mat4x4_print_mat4x4(m);
+    return m;
 }
 
 Mat4x4 mat4x4_create_matrixv3(vec3 a, vec3 b, vec3 c){
@@ -285,42 +288,142 @@ Mat4x4 mat4x4_diablo_viewport(){
     return I;
 }
 
-Mat4x4 mat4x4_perspective(float fov, float dist){
-    Mat4x4 I = mat4x4_identity();
-    I.m[3][2] = -1 / fov;
-    return I;
-}
-
-vec3 mat4x4_project(Mat4x4 projection, vec3 p){
-    vec4 point = vec4_create_vec4_v3(p);
-    point.w = 1;
-    point = mat4x4_mulv(projection, point);
-    point.x /= point.w; point.y /= point.w; point.z /= point.w;
-    //printf("%f\n", point.z);
-    return (vec3){point.x, point.y, point.z};
-}
-
-Mat4x4 mat4x4_view(vec3 camera_position, vec3 look_at){
+Mat4x4 mat4x4_view(vec3 camera_position, vec3 look_at, vec3 up){
     struct Camera c;
-    init_camera(&c, camera_position);
-    camera_lookat(&c, look_at);
+    camera_lookat(&c, camera_position, look_at, up);
+    //The view matrix is the inverse of the camera matrix. The camera matrix is the tranformation
+    //used to obtain the camera's position in the world. If we translated from the origin to the point,
+    //we need to inverse that transformation.
+
     // vec3_print_vector3(c.right);
     // vec3_print_vector3(c.up);
     // vec3_print_vector3(c.forward);
 
-    Mat4x4 m = mat4x4_create_matrixv4(
-        vec4_create_vec4_v3(c.right), 
-        vec4_create_vec4_v3(c.up), 
-        vec4_create_vec4_v3(c.forward));
-    
-    Mat4x4 t = mat4x4_identity();
-    t.m[0][3] = -camera_position.x;
-    t.m[1][3] = -camera_position.y;
-    t.m[2][3] = -camera_position.z;
-    Mat4x4 k = mat4x4_mul(m, t);
-    // mat4x4_print_mat4x4(m);
-    // mat4x4_print_mat4x4(t);
-    // mat4x4_print_mat4x4(k);
+    // Mat4x4 m = mat4x4_create_matrixv4(
+    //     vec4_create_vec4_v3(c.right), 
+    //     vec4_create_vec4_v3(c.up), 
+    //     vec4_create_vec4_v3(c.forward));
 
-    return k;
+    Mat4x4 m = mat4x4_identity();
+    m.m[0][0] = c.right.x;
+    m.m[0][1] = c.right.y;
+    m.m[0][2] = c.right.z;
+
+    m.m[1][0] = c.up.x;
+    m.m[1][1] = c.up.y;
+    m.m[1][2] = c.up.z;
+
+    /*
+        When a point relative to the camera is applied to the view matrix it is finding
+        the points position relative to the camers orientation. If our camera is pointing
+        forward in the negative z-axis in the world, then we want to find how far along the
+        camera's forward axis the point's z value lies. Typically if the camera moved from the origin
+        to it's position, it's translation is M * c where is is the translation matrix, and c is the camera.
+        To go from the camera's position to the origin, these values are negated.
+    */
+    m.m[2][0] = -c.forward.x;
+    m.m[2][1] = -c.forward.y;
+    m.m[2][2] = -c.forward.z;
+    m.m[3][3] = 1;
+
+    m.m[0][3] = -vec3_dot(c.right, c.position);
+    m.m[1][3] = -vec3_dot(c.up, c.position);
+    m.m[2][3] = vec3_dot(c.forward, c.position);
+
+    //mat4x4_print_mat4x4(m);
+
+    Mat4x4 view = m;
+
+    return view;
 }
+
+Mat4x4 mat4x4_perspective_projection(float fov, float aspect, float znear, float zfar){
+
+    /*
+        Using: 3D Computer Graphics | Deriving the Perspective Projection Matrix as a ref.
+        
+        This matrix is used after our Camera transformation using the view matrix.
+        We want to take our coordiantes in view space and project these values onto the screen.
+        Our goal is to convert view space/camera space coordiantes to clip space coordinates.
+
+        We start by imagining our camera as a frustum. This frutsum starts at the camera and extends
+        into the world. Of course because the frustum is 3D there is a left, right, top, bottom, near, and
+        far plane associated with each side respectively. If we observe this frustum from the right
+        side, we limit the 3D frustum to a 2D triangle. This triangle gives us the side view, where
+        the depth ranges from the camera to the far plane and the angle is given by theta. Our goal in 
+        this perspective is to find where along the defined near plane, the area given by determining how close
+        to start to the camera, our object will pass through if we were to draw a line from the camera
+        to the object. 
+        https://www.scratchapixel.com/lessons/3d-basic-rendering/perspective-and-orthographic-projection-matrix//opengl-perspective-projection-matrix.html
+        The link above shows a decent picture of what we're trying to accomplish. We can replicate this 
+        same result by looking at our frustum form the top havving our z extend outward and our x being our
+        upward axis.
+
+
+        Finding Where Our Point Intersects with the Near Plane:
+        Something to notice when finding this intersection starting from the camera and going to the near
+        plane where the objects point intersects, is that if we know where the object's point is within
+        the frustum we can use the law of similar triangles to determine the ratio. Since these ratios
+        are the same, we can then solve for where along the y_n (near plane y axis) our point
+        will be. Again keep in mind we are in view coordinates still at this moment.
+
+        Normalizing the Coordinate:
+        We want to now normalize the view coordinate value. Typically to do this, you take the full width/height
+        of your plane and divide where your point is along the respective axis by that width/height.
+        Remember though, we are solving for where the point intersects on the near plane along the 
+        vertical/horizontal axis or x_n and y_n. We know our ratio is:
+        x_n / z_n = x_e / z_e => x_n = (x_e * z_n) / z_e. the n stands for near. Our z_n is our defined
+        near plane distance from the camera. We can set this to be any number. The only problem with this
+        is that we still do not have our values normalized. To do this, we need to divide each value in
+        eye coordinates by the width/height of the screen. So now our equation is : 
+        x_n = (x_e * z_n) / (width * z_e).
+        Now comes the obtaining of the height within the near plane. If looking at our frustum
+        from the x-axis side, we get our triangle view again. Focusing on the near plane portion
+        (go to about 19:45 within the video), we want to determine the height/top portion.
+        We can solve for this using trig. We konw the tangent is the ratio between the height/width, 
+        of a triangle. Our triangle's angle is only using half. Remember we do not use the full triangle
+        because the intersection is always above the halfway point. Therefore we can obtain the tangent
+        of half the angle which wil return to us the exact same ratio if we were to perform height / width.
+        If we then perform algebra on the following equation: tan(theta/2) = t / n (t = top and n = near),
+        we can solve for t: tan(theta / 2) * n = t.
+
+
+        The idea is to imagine that our camera, now being centered at the origin, has normalized coordiantes
+        ranging from [-1, 1]. These values extend from the right, left, top, bottom, near, and far.
+
+
+    */
+    Mat4x4 perspective_mat = mat4x4_identity();
+    //The pi / 180 is used because our values going into tanf function are 
+    //not in radians so we have to convert them.
+
+    /*
+        Another thing to be sure of is our understanding of fov. The FOV represents how much we see in the
+        scene through the camera. If we look at our camera from the side at the x axis, we will see
+        the y axis pointing up and z axis pointing out.
+    */
+    float f = 1.f / tanf((fov / 2.f) * ( 3.14159f / 180.f));
+    float s = f / aspect;
+
+    perspective_mat.m[0][0] = s;
+    perspective_mat.m[1][1] = f;
+
+    perspective_mat.m[2][2] = -(zfar + znear) / (zfar - znear);
+    perspective_mat.m[2][3] = -(2 * zfar * znear) / (zfar - znear);
+    perspective_mat.m[3][2] = -1;
+    perspective_mat.m[3][3] = 0;
+
+    //mat4x4_print_mat4x4(perspective_mat);
+
+    return perspective_mat;
+}
+ 
+vec4 mat4x4_perspective_divide(Mat4x4 projection_matrix, vec4 v){
+
+    if (v.w != 0){
+        v.x /= v.w;
+        v.y /= v.w;
+        v.z /= v.w;
+    }
+    return v;
+ }

@@ -28,6 +28,6 @@ vec4 vec4_create_vec4_v3(vec3 u){
     return (vec4){u.x, u.y, u.z, 0};
 }
 
-void vec4_print_vector3(vec4 u){
+void vec4_print_vector4(vec4 u){
     printf(VECTOR4_OUTPUT, u.x, u.y, u.z, u.w);
 }

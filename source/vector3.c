@@ -26,6 +26,10 @@ vec3 vec3_cross_product(vec3 u, vec3 v){
         u.x * v.y - u.y * v.x};
 }
 
+float vec3_dot(vec3 u, vec3 v){
+    return u.x * v.x + u.y * v.y + u.z * v.z;
+}
+
 vec3 vec3_create_vector3(float x, float y, float z){
     return (vec3){x, y, z};
 }
