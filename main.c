@@ -34,7 +34,7 @@ int main(int argc, char* argv []){
     float current_time = SDL_GetTicks() / 1000;
 
     //struct Object* object = init_object("game/diablo3_pose.obj", "rb");
-    struct Object* object = init_object("game/teapot.obj", "rb");
+    struct Object* object = init_object("game/obj files/teapot.obj", "rb");
 
     bool quit = (initialized) ? false : true;
     float time_now = SDL_GetTicks() / 1000;
