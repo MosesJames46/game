@@ -9,10 +9,6 @@
 #include <time.h>
 #include "../headers/Camera.h"
 #include "../headers/Matrix4.h"
-#include "/usr/local/opt/libomp/include/omp.h"
-
-
-struct Game_Data game_data;
 
 void draw_line(vec3 u, vec3 v){
     
@@ -47,9 +43,9 @@ void draw_line(vec3 u, vec3 v){
 
 
 vec3 display_coordinate(vec3 u){
-    //(width / 2) + point
-    int screen_position_x = u.x + (game_data.width / 2.f);
-    int screen_position_y = -u.y + (game_data.height / 2.f);
+    //Expects a screen coordinate value. i.e. Imagine a coordinate system's origin is (0,0). Going left and down is the 3rd Quadrant. 
+    int screen_position_x = (int)gm_roundf(u.x + (game_data.width / 2.f));
+    int screen_position_y = (int)gm_roundf(-u.y + (game_data.height / 2.f));
     return (vec3){screen_position_x, screen_position_y, u.z};
 }
 
@@ -64,8 +60,8 @@ vec3 screen_coordinate(vec3 point){
     */
 
    //Very huge deal to actually round the values being sent into the screen. Fixes any rasterization issues.
-    float x = point.x + (game_data.width / 2.f);
-    float y = (game_data.height / 2.f) - point.y;
+    float x = (point.x) * (game_data.width / 2.f);
+    float y = (game_data.height / 2.f) * (point.y);
     //printf(VECTOR3_OUTPUT"\n", x, y, point.z);
     return (vec3){x, y, point.z};
 }
@@ -79,11 +75,11 @@ vec3 NDC_coordinate(vec3 point){
 }
 
 void draw_pointc(vec3 u, vec3 color){    
+    //This function expects a display coordinate in SDL coordinates.
     //set point color. Call SDL_SetRenderDrawColor.
     SDL_SetRenderDrawColor(game_data.renderer, color.x, color.y, color.z, 255);
     //draw point on screen. Call SDL_RenderDrawPoint.
     SDL_RenderDrawPoint(game_data.renderer, u.x, u.y);
-
 }
 
 void draw_point(vec3 u){
@@ -141,49 +137,70 @@ void draw_object(struct Object* object, float t){
     clock_t before  = clock();
     //#pragma omp parallel for
 
-    Mat4x4 scale = mat4x4_scale(50.f);
-    vec3 axis = {0, current++, 2};
+    //Object Orientation
+    Mat4x4 scale = mat4x4_scale(100.f);
+    vec3 axis = {0, 0,  0};
     Mat4x4 rotate = mat4x4_rotate(axis);
-    Mat4x4 translate = mat4x4_translate((vec3){100, 0, 0});
+    Mat4x4 translate = mat4x4_translate((vec3){0, 0, 0});
 
     Mat4x4 model = mat4x4_mul(rotate, scale);
     model = mat4x4_mul(translate, model);
     //mat4x4_print_mat4x4(model);
 
+    //Camera Orientation
     struct Camera c;
-    vec3 camera_position = (vec3){0, 0, 10};
+    vec3 camera_position = (vec3){0, 0, 10 + current++};
     vec3 center = (vec3){0, 0, 0};
     vec3 up = (vec3){0, 1, 0};
     Mat4x4 view = mat4x4_view(camera_position, center, up);
 
-    Mat4x4 persp_proj = mat4x4_perspective_projection(45.f, (float)game_data.width / (float)game_data.height, -.1f, -100.f);
+    //Perspective Projection
+    Mat4x4 persp_proj = mat4x4_perspective_projection(45.f, (float)game_data.width / (float)game_data.height, .1f, 1000.f);
     //mat4x4_print_mat4x4(persp_proj);
 
-    vec3 obj_position = (vec3){0, 0, 0};
+    //vec3 obj_position = (vec3){0, 0, 0};
     Mat4x4 M = mat4x4_mul(persp_proj, mat4x4_mul(view, model));
+    //Mat4x4 M = mat4x4_mul(view, model);
+
+    //vec3 k = {-150, -150, 0};
+    //vec3_print_vector3(display_coordinate(k));
 
     for (int i = 0; i < object->vb_size; i+=9){
         vec4 a = {object->vertex_buffer[i], object->vertex_buffer[i + 1], object->vertex_buffer[i + 2], 1};
         vec4 b = {object->vertex_buffer[i + 3], object->vertex_buffer[i + 4], object->vertex_buffer[i + 5], 1};
         vec4 c = {object->vertex_buffer[i + 6], object->vertex_buffer[i + 7], object->vertex_buffer[i + 8], 1};
 
-
         a = mat4x4_mulv(M, a);
         b = mat4x4_mulv(M, b);
         c = mat4x4_mulv(M, c);
-        
-        a = mat4x4_perspective_divide(persp_proj, a);
-        b = mat4x4_perspective_divide(persp_proj, b);
-        c = mat4x4_perspective_divide(persp_proj, c);
-        
 
+        a = mat4x4_clipping_check(a);
+        b = mat4x4_clipping_check(b);
+        c = mat4x4_clipping_check(c);
+        
+        a = mat4x4_perspective_divide(a);
+        b = mat4x4_perspective_divide(b);
+        c = mat4x4_perspective_divide(c);
+
+        // vec4_print_vector4(a);
+        // vec4_print_vector4(b);
+        // vec4_print_vector4(c);
 
         vec3 p1 = {a.x, a.y, a.z};
         vec3 p2 = {b.x, b.y, b.z};
         vec3 p3 = {c.x, c.y, c.z};
-        // vec3_print_vector3(a);
-        // vec3_print_vector3(b);
-        // vec3_print_vector3(c);
+
+        p1 = screen_coordinate(p1);
+        p2 = screen_coordinate(p2);
+        p3 = screen_coordinate(p3);
+
+        // p1 = display_coordinate(p1);
+        // p2 = display_coordinate(p2);
+        // p3 = display_coordinate(p3);
+
+        // vec3_print_vector3(p1);
+        // vec3_print_vector3(p2);
+        // vec3_print_vector3(p3);
 
         // p1 = NDC_coordinate(p1);
         // p2 = NDC_coordinate(p2);
@@ -250,10 +267,9 @@ void draw_rasterize(Triangle t, float bounding_box[4]){
     int y_min = gm_maxi(bounding_box[2], -game_data.height / 2);
     int y_max = gm_mini(bounding_box[3], game_data.height/2);
 
-    
-    vec3 screen_coordinates;
+    //Try 3 input and 4 input for homework.
+
     float z;
-    #pragma omp parallel for
     clock_t before = clock();
     for (int x = x_min; x <= x_max; x++){
         for (int y = y_min; y <= y_max; y++){
@@ -266,26 +282,28 @@ void draw_rasterize(Triangle t, float bounding_box[4]){
             if (alpha < 0 || beta < 0 || gamma < 0) continue;
             //if (alpha >= 0 || beta >= 0 || gamma >= 0) continue;
 
-            vec3 color = {255, 255, 255};
+            vec3 color = {255.f, 255.f, 255.f};
             //Interpolated z-value applied to color
             z = t.A.z * alpha + t.B.z * beta + t.C.z * gamma;
+
             color.x *= z; color.y *= z; color.z *= z;
 
-            //Get screen coordinate position which relates to z-buffer value.
-            //screen_coordinates = NDC_coordinate((vec3){x, y, 0});
-            //screen_coordinates = basic_projection(screen_coordinates);
-            screen_coordinates = screen_coordinate(p);
-            //vec3_print_vector3(screen_coordinates);
-            //vec3_print_vector3(screen_coordinates);
-
             //Ensure screen_coordinate is within range of viewport
-            if ((int)screen_coordinates.x >= game_data.width || (int)screen_coordinates.y >= game_data.height) continue;
-            if (z >= game_data.z_buffer[(int)screen_coordinates.x][(int)screen_coordinates.y]){
-                draw_pointc(screen_coordinates, color);
-                game_data.z_buffer[(int)screen_coordinates.x][(int)screen_coordinates.y] = z;
+            vec3 display_coords = display_coordinate(p);
+
+            int z_x = display_coords.x;
+            int z_y = display_coords.y;
+            if (z_x < 0 || z_y < 0) continue;
+            if (z_x >= game_data.width || z_y >= game_data.height) continue;
+
+            //vec3_print_vector3(color);
+
+            //draw_pointc(display_coords, color);
+            if (z <= game_data.z_buffer[z_x][z_y]){
+                draw_pointc(display_coords, color);
+                game_data.z_buffer[z_x][z_y] = z;
             }
-            //draw_pointc((vec3){x, y, 1}, color);
-            //game_data.z_buffer[(int)screen_coordinates.x][(int)screen_coordinates.y] = z; 
+
         }
     }
     clock_t after = clock();

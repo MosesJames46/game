@@ -3,7 +3,7 @@
 #ifndef GAME_DATA_H
 #define GAME_DATA_H
 
-#define WINDOW_WIDTH 700;
+#define WINDOW_WIDTH 300;
 #define WINDOW_HEIGHT 300;
 
 //Using extern: https://www.linkedin.com/pulse/back-basics-how-properlly-extern-struct-cc-gurajapu-raja-sumant

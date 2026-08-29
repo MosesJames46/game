@@ -221,9 +221,9 @@ Mat4x4 mat4x4_inverse(Mat4x4 A){
 
 Mat4x4 mat4x4_scale(float s){
     Mat4x4 I = mat4x4_identity();
-    I.m[0][0] *= s;
-    I.m[1][1] *= s;
-    I.m[2][2] *= s;
+    I.m[0][0] = s;
+    I.m[1][1] = s;
+    I.m[2][2] = s;
     return I;
 }
 
@@ -298,12 +298,8 @@ Mat4x4 mat4x4_view(vec3 camera_position, vec3 look_at, vec3 up){
     // vec3_print_vector3(c.right);
     // vec3_print_vector3(c.up);
     // vec3_print_vector3(c.forward);
-
-    // Mat4x4 m = mat4x4_create_matrixv4(
-    //     vec4_create_vec4_v3(c.right), 
-    //     vec4_create_vec4_v3(c.up), 
-    //     vec4_create_vec4_v3(c.forward));
-
+    //The following are placed this way because the normally would go into the matrix as a column vector.
+    //Because our values are normalized however, we can perform an inverse of the camera orientation by transposing.
     Mat4x4 m = mat4x4_identity();
     m.m[0][0] = c.right.x;
     m.m[0][1] = c.right.y;
@@ -318,7 +314,7 @@ Mat4x4 mat4x4_view(vec3 camera_position, vec3 look_at, vec3 up){
         the points position relative to the camers orientation. If our camera is pointing
         forward in the negative z-axis in the world, then we want to find how far along the
         camera's forward axis the point's z value lies. Typically if the camera moved from the origin
-        to it's position, it's translation is M * c where is is the translation matrix, and c is the camera.
+        to it's position, it's translation is M * c where M is the translation matrix, and c is the camera.
         To go from the camera's position to the origin, these values are negated.
     */
     m.m[2][0] = -c.forward.x;
@@ -326,6 +322,18 @@ Mat4x4 mat4x4_view(vec3 camera_position, vec3 look_at, vec3 up){
     m.m[2][2] = -c.forward.z;
     m.m[3][3] = 1;
 
+    /*
+        If we were to take the Orientation of the Camera and the Translation Matrix and perform matrix multiplication, we'd be multiplying the camera's oreientation to it's 
+        translation. The problem is what happens computationally. Every row to column is basically just the dot product of the row vector of the Orientation matrix and the column
+        of the translation matrix. Even more so, the first portion is just the Orientation to an identity matrix because the translation matrix has 1 in the diagonals and the 
+        homogenous coordinate and the affine transformation. 
+
+        Simply put, when we perform the matrix transformation we get the same result for the orientation but append the translation to the last column vector. Since 
+        we only need the translation, dot product those values. 
+
+        We perform negation because we want to place the camera at the center of the world negating the translation is essentially taking us back to the 
+        original starting position of the camera.
+    */
     m.m[0][3] = -vec3_dot(c.right, c.position);
     m.m[1][3] = -vec3_dot(c.up, c.position);
     m.m[2][3] = vec3_dot(c.forward, c.position);
@@ -338,6 +346,10 @@ Mat4x4 mat4x4_view(vec3 camera_position, vec3 look_at, vec3 up){
 }
 
 Mat4x4 mat4x4_perspective_projection(float fov, float aspect, float znear, float zfar){
+
+    /*
+        https://www.scratchapixel.com/lessons/3d-basic-rendering/perspective-and-orthographic-projection-matrix/perspective-matrix-in-practice.html?utm_source=chatgpt.com
+    */
 
     /*
         Using: 3D Computer Graphics | Deriving the Perspective Projection Matrix as a ref.
@@ -417,8 +429,40 @@ Mat4x4 mat4x4_perspective_projection(float fov, float aspect, float znear, float
 
     return perspective_mat;
 }
+
+vec4 mat4x4_clipping_check(vec4 v){
+    /*
+        The following is taken from scratch pixel: https://www.scratchapixel.com/lessons/3d-basic-rendering/perspective-and-orthographic-projection-matrix/perspective-matrix-in-practice.html?utm_source=chatgpt.com
+
+        When clipping coordinates, we want the final result to be between [-1, 1]. When vertices are tranformed into clip space,
+        the result we're looking for is -1 <= x_clip / w_clip <= 1. This is equivalent to -w_clip <= x_clip <= w_clip. 
+        The following code represents this with each component.
+    */
+    float pos_w = v.w;
+    float neg_w = -pos_w;
+
+    if (neg_w > v.x ){
+        v.x = neg_w;
+    }else if (v.x > pos_w){
+        v.x = pos_w;
+    }
+
+    if (neg_w > v.y ){
+        v.y = neg_w;
+    }else if (v.y > pos_w){
+        v.y = pos_w;
+    }
+
+    if (neg_w > v.z ){
+        v.z = neg_w;
+    }else if (v.z > pos_w){
+        v.z = pos_w;
+    }
+
+    return v;
+}
  
-vec4 mat4x4_perspective_divide(Mat4x4 projection_matrix, vec4 v){
+vec4 mat4x4_perspective_divide(vec4 v){
 
     if (v.w != 0){
         v.x /= v.w;

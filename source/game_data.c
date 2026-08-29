@@ -36,11 +36,10 @@ bool init_game(){
     for (int i = 0; i < game_data.width; i++){
         game_data.z_buffer[i] = malloc(sizeof(float) * game_data.height);
     }
-    if (game_data.z_buffer){
-        for(int i = 0; i < game_data.width; i++){
-            for(int j = 0; j < game_data.height; j++){
-                game_data.z_buffer[i][j] = 1;
-            }
+
+    for(int i = 0; i < game_data.width; i++){
+        for(int j = 0; j < game_data.height; j++){
+            game_data.z_buffer[i][j] = 1.f;
         }
     }
 

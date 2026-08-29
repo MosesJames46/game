@@ -3,7 +3,6 @@
 #include "../headers/game_utility.h"
 #include <math.h>
 #include <stdio.h>
-#include "/usr/local/opt/libomp/include/omp.h"
 
 Mat3x3 mat3x3_mul(Mat3x3 A, Mat3x3 B){
     Mat3x3 C;

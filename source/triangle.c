@@ -4,7 +4,7 @@
 #include <stdio.h>
 
 float signed_area(Triangle t){
-    return (t.B.x - t.A.x)*(t.C.y - t.A.y) - (t.B.y - t.A.y)*(t.C.x - t.A.x) * .5f;
+    return ((t.B.x - t.A.x)*(t.C.y - t.A.y) - (t.B.y - t.A.y)*(t.C.x - t.A.x));
 }
 
 float signed_triangle_area(Triangle t){

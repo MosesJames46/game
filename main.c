@@ -33,7 +33,8 @@ int main(int argc, char* argv []){
     float z_axis = 0;
     float current_time = SDL_GetTicks() / 1000;
 
-    struct Object* object = init_object("monkey.obj", "rb");
+    //struct Object* object = init_object("game/diablo3_pose.obj", "rb");
+    struct Object* object = init_object("game/teapot.obj", "rb");
 
     bool quit = (initialized) ? false : true;
     float time_now = SDL_GetTicks() / 1000;
@@ -45,7 +46,7 @@ int main(int argc, char* argv []){
         SDL_SetRenderDrawColor(game_data.renderer, 0, 0, 0, 255);
         SDL_RenderClear(game_data.renderer);
         //Reset z-buffer every frame.
-        #pragma omp parallel for
+
         for (int i =0; i < game_data.width; i++){
             for (int j = 0; j < game_data.height; j++){
                 game_data.z_buffer[i][j] = 0;

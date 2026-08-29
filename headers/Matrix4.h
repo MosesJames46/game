@@ -40,7 +40,8 @@ Mat4x4 mat4x4_view(vec3 camera_position, vec3 look_at, vec3 up);
 
 Mat4x4 mat4x4_perspective_projection(float fov, float aspect, float znear, float zfar);
 
-vec4 mat4x4_perspective_divide(Mat4x4 projection_matrix, vec4 vertex);
+vec4 mat4x4_perspective_divide(vec4 vertex);
+vec4 mat4x4_clipping_check(vec4 v);
 
 Mat4x4 mat4x4_diablo_viewport();
 #endif

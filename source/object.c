@@ -7,13 +7,18 @@
 int open_file(FILE** file, const char* file_location, const char* read_mode){
     //Attempts to create a file object. Returns zero on success.
     *file = fopen(file_location, read_mode);
-    if (file) return 0;
+    if (*file) return 0;
+    printf("Could not find file.\n");
     return 1;
 }
 
 int get_buffer_size(FILE* stream){
+    //seek to the end of the stream.
+    
     fseek(stream, 0, SEEK_END);
+    //Get where the cursor currently is.
     int size = ftell(stream);
+    //Set the cursor back to the beginning
     fseek(stream, 0, SEEK_SET);
     return size;
 }
@@ -26,8 +31,12 @@ int allocate_buffer(char** buffer, int buffer_size){
 
 int file_to_buffer(FILE* stream, char** buffer, int buffer_size){
     //https://en.cppreference.com/c/io/fread
-    size_t status = fread(*buffer, sizeof(*buffer), buffer_size, stream);
-    if (status < (size_t)buffer_size) return -1;
+    //Reads fiel into a buffer. Status will tell us if success.
+    size_t status = fread(*buffer, sizeof(**buffer), buffer_size, stream);
+    if (status < (size_t)buffer_size){
+        printf("File to buffer failed\n");
+        return -1;
+    }
     return 0;
 }
 
@@ -275,7 +284,6 @@ void normalize_vertices(struct Object** object){
 }
 
 void rotate_object(struct Object* object, float axis[3]){
-    #pragma opm parallel for
     for (int i = 0; i < object->vb_size; i+=3){
         vec3 r = mat3x3_rotate((vec3){axis[0], axis[1], axis[2]}, (vec3){object->vertex_buffer[i], object->vertex_buffer[i + 1], object->vertex_buffer[i + 2]});
         object->vertex_buffer[i] = r.x; 

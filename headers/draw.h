@@ -8,7 +8,7 @@
 #define DRAW
 #define POINTS2D "%f, %f"
 
-extern struct Object;
+struct Object;
 
 //Draw to screen https://stackoverflow.com/questions/20579658/how-to-draw-pixels-in-sdl-2-0
 //Opening a window: https://stackoverflow.com/questions/34424816/sdl-window-does-not-show
